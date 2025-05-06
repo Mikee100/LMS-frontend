@@ -23,6 +23,7 @@ import TutorDashboard from "./Instructor/TutorDashboard";
 import CourseList from "./Instructor/CourseList";
 import AddCourse from "./Instructor/AddCourse";
 import StudentDashboard from "./Students/StudentDashboard";
+import CourseView from "./Students/CourseView";
 
 
 
@@ -69,6 +70,7 @@ function App() {
         {/* Role-based redirect after login */}
         <Route path="/redirect-by-role" element={<RoleRedirect />} />
         <Route path="/student/dashboard" element={<StudentDashboard />}  />
+        <Route path="/courses/:id" element={<CourseView />} />
       </Routes>
     </BrowserRouter>
   );
