@@ -24,6 +24,7 @@ import CourseList from "./Instructor/CourseList";
 import AddCourse from "./Instructor/AddCourse";
 import StudentDashboard from "./Students/StudentDashboard";
 import CourseView from "./Students/CourseView";
+import EditCoursePage from "./Instructor/EditCoursePage";
 
 
 
@@ -63,6 +64,7 @@ function App() {
           <Route index element={<TutorDashboard />} />
           <Route path="courses" element={<CourseList />} />
           <Route path="courses/add" element={<AddCourse />} />
+          <Route path='courses/edit/:id' element={<EditCoursePage />} />
     
          
         </Route>

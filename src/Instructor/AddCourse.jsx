@@ -72,7 +72,8 @@ const AddCourse = () => {
       
       // In your handleSubmit function, change how you append materials:
 formData.materials.forEach((material) => {
-    formPayload.append('materials[]', material.file); // Add brackets to field name
+  formPayload.append('materials', material.file);
+  // Add brackets to field name
   });
       
 
