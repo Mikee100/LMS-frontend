@@ -38,11 +38,11 @@ const TutorNav = () => {
         </NavLink>
         
         <NavLink 
-          to="/tutor/settings" 
+          to="/tutor/schedule" 
           className={({isActive}) => `flex items-center p-3 rounded-lg ${isActive ? 'bg-indigo-700' : 'hover:bg-indigo-600'}`}
         >
           <FaCog className="mr-3" />
-          Settings
+          Schedules
         </NavLink>
       </div>
     </nav>

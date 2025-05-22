@@ -25,6 +25,8 @@ import AddCourse from "./Instructor/AddCourse";
 import StudentDashboard from "./Students/StudentDashboard";
 import CourseView from "./Students/CourseView";
 import EditCoursePage from "./Instructor/EditCoursePage";
+import TutorSchedulePage from "./Instructor/TutorScheduleCalendar";
+import CourseStructureEditor from "./Instructor/CourseStructureEditor";
 
 
 
@@ -42,9 +44,9 @@ function App() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute allowedRoles={['admin']}>
+          
               <AdminLayout />
-            </ProtectedRoute>
+           
           }
         >
           <Route index element={<AdminDashboard />} />
@@ -64,7 +66,8 @@ function App() {
           <Route index element={<TutorDashboard />} />
           <Route path="courses" element={<CourseList />} />
           <Route path="courses/add" element={<AddCourse />} />
-          <Route path='courses/edit/:id' element={<EditCoursePage />} />
+          <Route path='courses/edit/:id' element={<CourseStructureEditor />} />
+          <Route  path="schedule" element={<TutorSchedulePage />}  />
     
          
         </Route>

@@ -234,7 +234,7 @@ export default function InstructorRegistration() {
       console.log('[Navigation] Preparing to redirect to dashboard');
       setTimeout(() => {
         console.log('[Navigation] Redirecting to /instructor/dashboard');
-        navigate('/tutor/dashboard');
+        navigate('/tutor');
       }, 2000);
   
     } catch (error) {
