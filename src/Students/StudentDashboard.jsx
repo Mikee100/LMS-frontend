@@ -101,6 +101,7 @@ const StudentDashboard = () => {
   
     fetchCourses();
   }, []);
+ 
 
   useEffect(() => {
     let result = [...availableCourses];

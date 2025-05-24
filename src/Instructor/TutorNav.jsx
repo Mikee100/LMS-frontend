@@ -1,52 +1,77 @@
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { FaHome, FaBook, FaUsers, FaCalendarAlt, FaCog } from 'react-icons/fa';
+import {
+  FaHome,
+  FaBook,
+  FaUsers,
+  FaCalendarAlt,
+  FaCog,
+  FaBars,
+  FaArrowLeft
+} from 'react-icons/fa';
 
 const TutorNav = () => {
+  const [isExpanded, setIsExpanded] = useState(true);
+
   return (
-    <nav className="w-64 bg-indigo-800 text-white p-4 hidden md:block">
-      <div className="space-y-1">
-        <NavLink 
-          to="/tutor" 
-          className={({isActive}) => `flex items-center p-3 rounded-lg ${isActive ? 'bg-indigo-700' : 'hover:bg-indigo-600'}`}
-        >
-          <FaHome className="mr-3" />
-          Dashboard
-        </NavLink>
-        
-        <NavLink 
-          to="/tutor/courses" 
-          className={({isActive}) => `flex items-center p-3 rounded-lg ${isActive ? 'bg-indigo-700' : 'hover:bg-indigo-600'}`}
-        >
-          <FaBook className="mr-3" />
-          My Courses
-        </NavLink>
-        
-        <NavLink 
-          to="/tutor/students" 
-          className={({isActive}) => `flex items-center p-3 rounded-lg ${isActive ? 'bg-indigo-700' : 'hover:bg-indigo-600'}`}
-        >
-          <FaUsers className="mr-3" />
-          Students
-        </NavLink>
-        
-        <NavLink 
-          to="/tutor/courses/add" 
-          className={({isActive}) => `flex items-center p-3 rounded-lg ${isActive ? 'bg-indigo-700' : 'hover:bg-indigo-600'}`}
-        >
-          <FaCalendarAlt className="mr-3" />
-          Add Course
-        </NavLink>
-        
-        <NavLink 
-          to="/tutor/schedule" 
-          className={({isActive}) => `flex items-center p-3 rounded-lg ${isActive ? 'bg-indigo-700' : 'hover:bg-indigo-600'}`}
-        >
-          <FaCog className="mr-3" />
-          Schedules
-        </NavLink>
+    <div className="flex">
+      {/* Sidebar */}
+      <div
+        className={`
+          h-screen bg-indigo-800 text-white transition-all duration-300 ease-in-out
+          ${isExpanded ? 'w-64' : 'w-20'}
+          flex flex-col
+        `}
+      >
+        {/* Toggle Button */}
+        <div className="flex items-center justify-between p-4">
+          <h1 className={`text-xl font-bold transition-opacity duration-200 ${isExpanded ? 'opacity-100' : 'opacity-0 hidden'}`}>
+            Tutor Panel
+          </h1>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="text-white text-l focus:outline-none"
+            title="Toggle Navigation"
+          >
+            <FaArrowLeft />
+          </button>
+        </div>
+
+        {/* Navigation Links */}
+        <nav className="flex-1 mt-4 space-y-2">
+          <NavItem to="/tutor" icon={<FaHome />} text="Dashboard" isExpanded={isExpanded} />
+          <NavItem to="/tutor/courses" icon={<FaBook />} text="My Courses" isExpanded={isExpanded} />
+          <NavItem to="/tutor/students" icon={<FaUsers />} text="Students" isExpanded={isExpanded} />
+          <NavItem to="/tutor/courses/add" icon={<FaCalendarAlt />} text="Add Course" isExpanded={isExpanded} />
+          <NavItem to="/tutor/schedule" icon={<FaCog />} text="Schedules" isExpanded={isExpanded} />
+        </nav>
       </div>
-    </nav>
+
+      {/* Main content placeholder (optional) */}
+      <div className="flex-1 p-4">
+        {/* Your main content goes here */}
+      </div>
+    </div>
   );
 };
+
+const NavItem = ({ to, icon, text, isExpanded }) => (
+  <NavLink
+    to={to}
+    className={({ isActive }) =>
+      `flex items-center p-3 mx-2 rounded-lg transition-all duration-200 
+      ${isActive ? 'bg-indigo-700' : 'hover:bg-indigo-600'}`
+    }
+  >
+    <span className="text-lg">{icon}</span>
+    <span
+      className={`ml-4 transition-opacity duration-300 ${
+        isExpanded ? 'opacity-100' : 'opacity-0 hidden'
+      }`}
+    >
+      {text}
+    </span>
+  </NavLink>
+);
 
 export default TutorNav;
