@@ -41,9 +41,11 @@ const TutorNav = () => {
         <nav className="flex-1 mt-4 space-y-2">
           <NavItem to="/tutor" icon={<FaHome />} text="Dashboard" isExpanded={isExpanded} />
           <NavItem to="/tutor/courses" icon={<FaBook />} text="My Courses" isExpanded={isExpanded} />
-          <NavItem to="/tutor/students" icon={<FaUsers />} text="Students" isExpanded={isExpanded} />
+          <NavItem to="/tutor/notification" icon={<FaUsers />} text="Notifications" isExpanded={isExpanded} />
           <NavItem to="/tutor/courses/add" icon={<FaCalendarAlt />} text="Add Course" isExpanded={isExpanded} />
           <NavItem to="/tutor/schedule" icon={<FaCog />} text="Schedules" isExpanded={isExpanded} />
+          <NavItem to="/tutor/students" icon={<FaCog />} text="Students" isExpanded={isExpanded} />
+          <NavItem to="/tutor/messages" icon={<FaCog />} text="Messages" isExpanded={isExpanded} />
         </nav>
       </div>
 

@@ -114,75 +114,96 @@ export default function TutorDashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto p-4 md:p-6">
-        {/* Profile Summary */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800">
-                Welcome, {tutorData?.firstName} {tutorData?.lastName}
-              </h2>
-              <p className="text-indigo-600">{tutorData?.email}</p>
-              {tutorData?.bio && (
-                <p className="mt-3 text-gray-600">{tutorData.bio}</p>
-              )}
-            </div>
-            <div className="mt-4 md:mt-0">
-              <div className="bg-indigo-100 text-indigo-800 px-4 py-2 rounded-full inline-block">
-                {tutorData?.expertise?.join(', ') || 'No subjects specified'}
-              </div>
-            </div>
-          </div>
-        </div>
+     <main className="container mx-auto p-4 md:p-6">
+  {/* Quick Actions */}
+  <div className="flex flex-wrap gap-4 mb-6">
+    <button onClick={() => navigate('/instructor/create-course')} className="bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700 flex items-center">
+      <FaBook className="mr-2" /> Create New Course
+    </button>
+    <button onClick={() => navigate('/instructor/schedule-session')} className="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 flex items-center">
+      <FaCalendarAlt className="mr-2" /> Schedule Session
+    </button>
+    <button onClick={() => navigate('/instructor/messages')} className="bg-yellow-500 text-white px-4 py-2 rounded shadow hover:bg-yellow-600 flex items-center">
+      <FaUser className="mr-2" /> Message Students
+    </button>
+  </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <StatCard 
-            icon={<FaUser className="text-blue-500" />}
-            title="Students"
-            value={tutorData?.students?.length || 0}
-            trend="up"
-          />
-          <StatCard 
-            icon={<FaCalendarAlt className="text-green-500" />}
-            title="Upcoming Sessions"
-            value={tutorData?.upcomingSessions?.length || 0}
-            trend="neutral"
-          />
-          <StatCard 
-            icon={<FaBook className="text-purple-500" />}
-            title="Courses"
-            value={tutorData?.expertise?.length || 0}
-            trend="up"
-          />
-        </div>
+  {/* Stats Grid */}
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <StatCard icon={<FaUser className="text-blue-500" />} title="Total Students" value={tutorData?.students?.length || 0} trend="up" />
+    <StatCard icon={<FaBook className="text-purple-500" />} title="Active Courses" value={tutorData?.courses?.length || 0} trend="up" />
+    <StatCard icon={<FaCalendarAlt className="text-green-500" />} title="Upcoming Sessions" value={tutorData?.upcomingSessions?.length || 0} trend="neutral" />
+    <StatCard icon={<FaCalendarAlt className="text-gray-500" />} title="Completed Sessions" value={tutorData?.completedSessions?.length || 0} trend="up" />
+    <StatCard icon={<FaUser className="text-yellow-500" />} title="Average Rating" value={tutorData?.averageRating?.toFixed(1) || 'N/A'} trend="neutral" />
+    <StatCard icon={<FaBook className="text-green-700" />} title="Total Earnings" value={`$${tutorData?.earnings?.toFixed(2) || '0.00'}`} trend="up" />
+  </div>
 
-        {/* Recent Activity Section */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="p-6 border-b">
-            <h3 className="text-lg font-semibold flex items-center">
-              <FaCalendarAlt className="mr-2 text-indigo-500" />
-              Recent Activity
-            </h3>
-          </div>
-          {tutorData?.recentActivity?.length > 0 ? (
-            <ul className="divide-y divide-gray-200">
-              {tutorData.recentActivity.map((activity, index) => (
-                <li key={index} className="p-4 hover:bg-gray-50">
-                  <p className="text-gray-800">{activity.message}</p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {new Date(activity.timestamp).toLocaleString()}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="p-6 text-center text-gray-500">
-              No recent activity found
+  {/* Recent Sessions Table */}
+  <div className="bg-white rounded-lg shadow-md overflow-hidden mb-8">
+    <div className="p-6 border-b">
+      <h3 className="text-lg font-semibold flex items-center">
+        <FaCalendarAlt className="mr-2 text-indigo-500" />
+        Recent Sessions
+      </h3>
+    </div>
+    {tutorData?.recentSessions?.length > 0 ? (
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead>
+          <tr>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Course</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+            <th className="px-6 py-3"></th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {tutorData.recentSessions.map((session, idx) => (
+            <tr key={idx}>
+              <td className="px-6 py-4">{session.studentName}</td>
+              <td className="px-6 py-4">{session.courseTitle}</td>
+              <td className="px-6 py-4">{new Date(session.date).toLocaleString()}</td>
+              <td className="px-6 py-4">
+                <span className={`px-2 py-1 rounded-full text-xs ${session.status === 'completed' ? 'bg-green-100 text-green-700' : session.status === 'upcoming' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
+                  {session.status}
+                </span>
+              </td>
+              <td className="px-6 py-4">
+                <button onClick={() => navigate(`/instructor/session/${session.id}`)} className="text-indigo-600 hover:underline text-sm">Details</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    ) : (
+      <div className="p-6 text-center text-gray-500">No recent sessions found</div>
+    )}
+  </div>
+
+  {/* Latest Feedback */}
+  <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+    <h3 className="text-lg font-semibold mb-4 flex items-center">
+      <FaUser className="mr-2 text-yellow-500" />
+      Latest Feedback
+    </h3>
+    {tutorData?.latestFeedback?.length > 0 ? (
+      <ul className="space-y-4">
+        {tutorData.latestFeedback.map((feedback, idx) => (
+          <li key={idx} className="border-b pb-2">
+            <div className="flex items-center">
+              <span className="font-semibold">{feedback.studentName}</span>
+              <span className="ml-2 text-yellow-500">{'★'.repeat(feedback.rating)}</span>
             </div>
-          )}
-        </div>
-      </main>
+            <p className="text-gray-700">{feedback.comment}</p>
+            <p className="text-xs text-gray-400">{new Date(feedback.date).toLocaleDateString()}</p>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <div className="text-gray-500">No feedback yet</div>
+    )}
+  </div>
+</main>
     </div>
   );
 }

@@ -1,9 +1,25 @@
+// CourseStructureEditor.js
 import React, { useState, useEffect } from 'react';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FiUpload, FiFile, FiImage, FiX, FiArrowLeft, FiCheck, FiEye, FiDownload, FiPlus, FiChevronDown, FiChevronUp, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { 
+  FiUpload, 
+  FiFile, 
+  FiImage, 
+  FiX, 
+  FiArrowLeft, 
+  FiCheck, 
+  FiPlus, 
+  FiChevronDown, 
+  FiChevronUp, 
+  FiTrash2 
+} from 'react-icons/fi';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import SectionLockControl from './CourseEdit/SectionLockControl';
+import LectureItem from './CourseEdit/LectureItem';
+import MaterialItem from './CourseEdit/MaterialItem';
 
 const CourseStructureEditor = () => {
   const { id } = useParams();
@@ -15,7 +31,9 @@ const CourseStructureEditor = () => {
     subject: '',
     level: '',
     thumbnail: null,
-    sections: [], // This will contain our course sections
+    price: 0,
+    isFree: false,
+    sections: [],
   });
 
   const [thumbnailFile, setThumbnailFile] = useState(null);
@@ -24,48 +42,110 @@ const CourseStructureEditor = () => {
   const [submitting, setSubmitting] = useState(false);
   const [expandedSections, setExpandedSections] = useState({});
 
-  useEffect(() => {
-    const fetchCourseDetails = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(`http://localhost:5000/api/students/courses/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        
-        // Initialize sections if they don't exist
-        const courseData = response.data;
-        if (!courseData.sections) {
-          courseData.sections = [];
-        }
-        
-        setCourse(courseData);
-        
-        // Set preview image if thumbnail exists
-        if (courseData.thumbnail?.data) {
-          const base64String = btoa(
-            String.fromCharCode(...new Uint8Array(courseData.thumbnail.data.data || courseData.thumbnail.data)
-          ));
-          setPreviewImage(`data:image/jpeg;base64,${base64String}`);
-        }
+ const onDragEnd = (result) => {
+  if (!result.destination) return;
 
-        // Initialize expanded state for sections
-        const expanded = {};
-        courseData.sections.forEach((_, index) => {
-          expanded[index] = true;
-        });
-        setExpandedSections(expanded);
-      } catch (error) {
-        console.error('Error fetching course details:', error);
-        toast.error('Failed to load course details');
-      } finally {
-        setLoading(false);
+  // Section drag
+  if (result.type === 'SECTION') {
+    setCourse(prev => {
+      const sections = Array.from(prev.sections);
+      const [removed] = sections.splice(result.source.index, 1);
+      sections.splice(result.destination.index, 0, removed);
+      return { ...prev, sections };
+    });
+  }
+
+  // Lecture drag
+  if (result.type === 'LECTURE') {
+    const sectionId = result.source.droppableId;
+    setCourse(prev => {
+      const sections = prev.sections.map(section => {
+        if (section.id !== sectionId) return section;
+        const lectures = Array.from(section.lectures);
+        const [removed] = lectures.splice(result.source.index, 1);
+        lectures.splice(result.destination.index, 0, removed);
+        return { ...section, lectures };
+      });
+      return { ...prev, sections };
+    });
+  }
+};
+
+
+
+useEffect(() => {
+  const fetchCourseDetails = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`http://localhost:5000/api/students/courses/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      let courseData = response.data;
+      if (!courseData.sections) {
+        courseData.sections = [];
       }
-    };
 
-    fetchCourseDetails();
-  }, [id]);
+      // Normalize IDs and structure for sections and lectures
+      courseData.sections = (courseData.sections || []).map(section => ({
+        ...section,
+        id: section.id && String(section.id).trim() ? String(section.id) : `${Date.now()}_${Math.random()}`,
+        lectures: (section.lectures || []).map(lecture => ({
+          ...lecture,
+          id: lecture.id && String(lecture.id).trim() ? String(lecture.id) : `${Date.now()}_${Math.random()}`,
+        })),
+        isLocked: !!section.isLocked,
+        price: section.price || 0,
+        isFree: !!section.isFree,
+        materials: section.materials || [],
+      }));
+
+      setCourse(courseData);
+
+      // Set preview image if thumbnail exists
+      if (courseData.thumbnail?.data) {
+        const base64String = btoa(
+          String.fromCharCode(...new Uint8Array(courseData.thumbnail.data.data || courseData.thumbnail.data))
+        );
+        setPreviewImage(`data:image/jpeg;base64,${base64String}`);
+      }
+
+      // Expand all sections by default
+      const expanded = {};
+      courseData.sections.forEach((_, index) => {
+        expanded[index] = true;
+      });
+      setExpandedSections(expanded);
+
+    } catch (error) {
+      console.error('Error fetching course details:', error);
+      toast.error('Failed to load course details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchCourseDetails();
+}, [id]);
+
+
+
+  function normalizeSections(sections) {
+  return (sections || []).map(section => ({
+    ...section,
+    id: section.id && String(section.id).trim() ? String(section.id) : `${Date.now()}_${Math.random()}`,
+    lectures: (section.lectures || []).map(lecture => ({
+      ...lecture,
+      id: lecture.id && String(lecture.id).trim() ? String(lecture.id) : `${Date.now()}_${Math.random()}`,
+    })),
+    isLocked: !!section.isLocked,
+    price: section.price || 0,
+    isFree: !!section.isFree
+  }));
+}
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -87,33 +167,12 @@ const CourseStructureEditor = () => {
     }));
   };
 
-  // Section management
-  const addNewSection = () => {
-    setCourse(prev => ({
-      ...prev,
-      sections: [
-        ...prev.sections,
-        {
-          title: `Section ${prev.sections.length + 1}`,
-          description: '',
-          materials: [],
-          lectures: []
-        }
-      ]
-    }));
-    // Expand the new section by default
-    setExpandedSections(prev => ({
-      ...prev,
-      [course.sections.length]: true
-    }));
-  };
-
-  const updateSection = (index, field, value) => {
+  const toggleSectionLock = (sectionIndex) => {
     setCourse(prev => {
       const updatedSections = [...prev.sections];
-      updatedSections[index] = {
-        ...updatedSections[index],
-        [field]: value
+      updatedSections[sectionIndex] = {
+        ...updatedSections[sectionIndex],
+        isLocked: !updatedSections[sectionIndex].isLocked
       };
       return {
         ...prev,
@@ -122,7 +181,96 @@ const CourseStructureEditor = () => {
     });
   };
 
-  const removeSection = (index) => {
+  const toggleSectionFree = (sectionIndex) => {
+    setCourse(prev => {
+      const updatedSections = [...prev.sections];
+      updatedSections[sectionIndex] = {
+        ...updatedSections[sectionIndex],
+        isFree: !updatedSections[sectionIndex].isFree,
+        // Reset price if making free
+        price: updatedSections[sectionIndex].isFree ? updatedSections[sectionIndex].price : 0
+      };
+      return {
+        ...prev,
+        sections: updatedSections
+      };
+    });
+  };
+
+  const updateSectionPrice = (sectionIndex, value) => {
+    setCourse(prev => {
+      const updatedSections = [...prev.sections];
+      updatedSections[sectionIndex] = {
+        ...updatedSections[sectionIndex],
+        price: parseFloat(value) || 0
+      };
+      return {
+        ...prev,
+        sections: updatedSections
+      };
+    });
+  };
+
+const addNewSection = () => {
+  setCourse(prev => ({
+    ...prev,
+    sections: [
+      ...prev.sections,
+      {
+        id: Date.now().toString(), // <-- unique id
+        title: `Section ${prev.sections.length + 1}`,
+        description: '',
+        materials: [],
+        lectures: [],
+        isLocked: false,
+        price: 0,
+        isFree: true
+      }
+    ]
+  }));
+  setExpandedSections(prev => ({
+    ...prev,
+    [course.sections.length]: true
+  }));
+};
+
+const addNewLecture = (sectionIndex) => {
+  setCourse(prev => {
+    const updatedSections = [...prev.sections];
+    updatedSections[sectionIndex].lectures = [
+      ...updatedSections[sectionIndex].lectures,
+      {
+        id: Date.now().toString(), // <-- unique id
+        title: `Lecture ${updatedSections[sectionIndex].lectures.length + 1}`,
+        description: '',
+        materials: [],
+        videoUrl: ''
+      }
+    ];
+    return {
+      ...prev,
+      sections: updatedSections
+    };
+  });
+};
+const updateSection = (index, field, value) => {
+  setCourse(prev => {
+    const updatedSections = prev.sections.map((section, idx) => {
+      if (idx !== index) return section;
+      return {
+        ...section,
+        [field]: value
+      };
+    });
+    return {
+      ...prev,
+      sections: updatedSections
+    };
+  });
+};
+
+const removeSection = (index) => {
+  if (window.confirm('Are you sure you want to delete this section?')) {
     setCourse(prev => {
       const updatedSections = [...prev.sections];
       updatedSections.splice(index, 1);
@@ -131,41 +279,31 @@ const CourseStructureEditor = () => {
         sections: updatedSections
       };
     });
-  };
+  }
+};
 
-  // Lecture management
-  const addNewLecture = (sectionIndex) => {
-    setCourse(prev => {
-      const updatedSections = [...prev.sections];
-      updatedSections[sectionIndex].lectures = [
-        ...updatedSections[sectionIndex].lectures,
-        {
-          title: `Lecture ${updatedSections[sectionIndex].lectures.length + 1}`,
-          description: '',
-          materials: [],
-          videoUrl: ''
-        }
-      ];
+
+const updateLecture = (sectionIndex, lectureIndex, field, value) => {
+  setCourse(prev => {
+    const updatedSections = prev.sections.map((section, sIdx) => {
+      if (sIdx !== sectionIndex) return section;
       return {
-        ...prev,
-        sections: updatedSections
+        ...section,
+        lectures: section.lectures.map((lecture, lIdx) => {
+          if (lIdx !== lectureIndex) return lecture;
+          return {
+            ...lecture,
+            [field]: value
+          };
+        })
       };
     });
-  };
-
-  const updateLecture = (sectionIndex, lectureIndex, field, value) => {
-    setCourse(prev => {
-      const updatedSections = [...prev.sections];
-      updatedSections[sectionIndex].lectures[lectureIndex] = {
-        ...updatedSections[sectionIndex].lectures[lectureIndex],
-        [field]: value
-      };
-      return {
-        ...prev,
-        sections: updatedSections
-      };
-    });
-  };
+    return {
+      ...prev,
+      sections: updatedSections
+    };
+  });
+};
 
   const removeLecture = (sectionIndex, lectureIndex) => {
     setCourse(prev => {
@@ -178,19 +316,16 @@ const CourseStructureEditor = () => {
     });
   };
 
-  // Material management
   const handleMaterialsChange = (sectionIndex, lectureIndex, e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
     if (lectureIndex !== undefined) {
-      // Adding materials to a lecture
       updateLecture(sectionIndex, lectureIndex, 'materials', [
         ...course.sections[sectionIndex].lectures[lectureIndex].materials,
         ...files
       ]);
     } else {
-      // Adding materials to a section
       updateSection(sectionIndex, 'materials', [
         ...course.sections[sectionIndex].materials,
         ...files
@@ -200,7 +335,6 @@ const CourseStructureEditor = () => {
 
   const removeMaterial = (sectionIndex, lectureIndex, materialIndex) => {
     if (lectureIndex !== undefined) {
-      // Remove from lecture
       setCourse(prev => {
         const updatedSections = [...prev.sections];
         const updatedMaterials = [...updatedSections[sectionIndex].lectures[lectureIndex].materials];
@@ -212,7 +346,6 @@ const CourseStructureEditor = () => {
         };
       });
     } else {
-      // Remove from section
       setCourse(prev => {
         const updatedSections = [...prev.sections];
         const updatedMaterials = [...updatedSections[sectionIndex].materials];
@@ -226,6 +359,30 @@ const CourseStructureEditor = () => {
     }
   };
 
+const viewMaterial = (material) => {
+  const token = localStorage.getItem('token');
+  const fileUrl = `http://localhost:5000/api/courses/material/${material.filename}?token=${token}`;
+
+  const isPDF = (material.originalName || material.filename)?.endsWith('.pdf');
+
+  // No state updates, just open in a new tab
+  setTimeout(() => {
+    if (isPDF) {
+      window.open(fileUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      const a = document.createElement('a');
+      a.href = fileUrl;
+      a.download = material.originalName || material.filename;
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  }, 100);
+};
+
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -236,11 +393,12 @@ const CourseStructureEditor = () => {
       formData.append('description', course.description);
       formData.append('subject', course.subject);
       formData.append('level', course.level);
+      formData.append('price', course.price);
+      formData.append('isFree', course.isFree);
       formData.append('sections', JSON.stringify(course.sections));
 
       if (thumbnailFile) formData.append('thumbnail', thumbnailFile);
 
-      // Add all materials to formData
       course.sections.forEach((section, sectionIndex) => {
         section.materials.forEach((material, materialIndex) => {
           if (material instanceof File) {
@@ -267,55 +425,13 @@ const CourseStructureEditor = () => {
       });
 
       toast.success('Course updated successfully!');
-      setTimeout(() => navigate('/tutor/courses'), 1500);
+      
 
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.message || 'Error updating course');
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const downloadMaterial = async (materialId, filename) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(
-        `http://localhost:5000/api/courses/material/${materialId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          responseType: 'blob'
-        }
-      );
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error('Error downloading material:', err);
-      toast.error('Failed to download material');
-    }
-  };
-
-  const viewMaterial = (material) => {
-    const token = localStorage.getItem('token');
-    const fileUrl = `http://localhost:5000/api/courses/material/${material.filename}?token=${token}`;
-
-    if ((material.originalName || material.filename)?.endsWith('.pdf')) {
-      window.open(fileUrl, '_blank');
-    } else {
-      const a = document.createElement('a');
-      a.href = fileUrl;
-      a.download = material.originalName || material.filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
     }
   };
 
@@ -337,120 +453,28 @@ const CourseStructureEditor = () => {
     );
   }
 
-  return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6">
-      <ToastContainer position="top-right" autoClose={3000} />
-      
-      <button 
-        onClick={() => navigate(-1)}
-        className="flex items-center text-indigo-600 hover:text-indigo-800 mb-6"
-      >
-        <FiArrowLeft className="mr-2" /> Back to Courses
-      </button>
+// ...existing code...
+return (
+  <div className="max-w-6xl mx-auto p-4 sm:p-6">
+    <ToastContainer position="top-right" autoClose={3000} />
+    
+    <button 
+      onClick={() => navigate(-1)}
+      className="flex items-center text-indigo-600 hover:text-indigo-800 mb-6"
+    >
+      <FiArrowLeft className="mr-2" /> Back to Courses
+    </button>
 
-      <div className="bg-white rounded-xl shadow-md overflow-hidden p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Edit Course Structure</h2>
-        <p className="text-gray-600 mb-6">Organize your course into sections and lectures</p>
+    <div className="bg-white rounded-xl shadow-md overflow-hidden p-6">
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">Edit Course Structure</h2>
+      <p className="text-gray-600 mb-6">Organize your course into sections and lectures</p>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Course Title</label>
-              <input
-                type="text"
-                name="title"
-                value={course.title}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="e.g. Introduction to React"
-                required
-              />
-            </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* ...course info fields... */}
+        {/* ...thumbnail upload... */}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-              <input
-                type="text"
-                name="subject"
-                value={course.subject}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="e.g. Web Development"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Level</label>
-            <select
-              name="level"
-              value={course.level}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-              required
-            >
-              <option value="">Select difficulty level</option>
-              <option value="beginner">Beginner</option>
-              <option value="intermediate">Intermediate</option>
-              <option value="advanced">Advanced</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea
-              name="description"
-              value={course.description}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-              rows="4"
-              placeholder="Detailed course description..."
-            ></textarea>
-          </div>
-
-          <div className="space-y-4">
-            <label className="block text-sm font-medium text-gray-700">Course Thumbnail</label>
-            
-            <div className="flex items-center space-x-6">
-              {previewImage ? (
-                <div className="relative">
-                  <img 
-                    src={previewImage} 
-                    alt="Course thumbnail preview" 
-                    className="h-32 w-32 rounded-lg object-cover border"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPreviewImage(null);
-                      setThumbnailFile(null);
-                    }}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                  >
-                    <FiX size={16} />
-                  </button>
-                </div>
-              ) : (
-                <div className="h-32 w-32 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
-                  <FiImage size={32} />
-                </div>
-              )}
-              
-              <label className="flex flex-col items-center px-4 py-3 bg-white rounded-lg border border-dashed border-gray-300 cursor-pointer hover:bg-gray-50">
-                <FiUpload className="text-indigo-600 mb-2" />
-                <span className="text-sm text-gray-600">Upload new thumbnail</span>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={handleThumbnailChange} 
-                  className="hidden" 
-                />
-              </label>
-            </div>
-          </div>
-
-          {/* Course Sections */}
+        {/* Course Sections with Drag and Drop */}
+        <DragDropContext onDragEnd={onDragEnd}>
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-medium text-gray-900">Course Sections</h3>
@@ -463,277 +487,214 @@ const CourseStructureEditor = () => {
               </button>
             </div>
 
-            {course.sections.length === 0 && (
-              <div className="text-center py-8 bg-gray-50 rounded-lg">
-                <p className="text-gray-500">No sections added yet. Add your first section to organize your course content.</p>
-              </div>
-            )}
-
-            {course.sections.map((section, sectionIndex) => (
-              <div key={sectionIndex} className="border border-gray-200 rounded-lg overflow-hidden">
-                <div className="bg-gray-50 px-4 py-3 flex justify-between items-center">
-                  <div className="flex items-center space-x-3">
-                    <button
-                      type="button"
-                      onClick={() => toggleSection(sectionIndex)}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      {expandedSections[sectionIndex] ? <FiChevronUp size={18} /> : <FiChevronDown size={18} />}
-                    </button>
-                    <input
-                      type="text"
-                      value={section.title}
-                      onChange={(e) => updateSection(sectionIndex, 'title', e.target.value)}
-                      className="bg-transparent font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded px-2 py-1"
-                    />
-                  </div>
-                  <div className="flex space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => removeSection(sectionIndex)}
-                      className="text-red-500 hover:text-red-700 p-1"
-                      title="Remove section"
-                    >
-                      <FiTrash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-
-                {expandedSections[sectionIndex] && (
-                  <div className="p-4 space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Section Description</label>
-                      <textarea
-                        value={section.description}
-                        onChange={(e) => updateSection(sectionIndex, 'description', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                        rows="3"
-                        placeholder="Describe what this section covers..."
-                      ></textarea>
+            <Droppable droppableId="sections" type="SECTION" isDropDisabled={false}>
+              {(provided) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className="space-y-6"
+                >
+                  {course.sections.length === 0 && (
+                    <div className="text-center py-8 bg-gray-50 rounded-lg">
+                      <p className="text-gray-500">No sections added yet. Add your first section to organize your course content.</p>
                     </div>
+                  )}
 
-                    {/* Section Materials */}
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <h4 className="text-sm font-medium text-gray-700">Section Materials</h4>
-                        <label className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 cursor-pointer">
-                          <FiUpload className="mr-1" /> Add Materials
-                          <input 
-                            type="file" 
-                            multiple 
-                            onChange={(e) => handleMaterialsChange(sectionIndex, undefined, e)} 
-                            className="hidden" 
-                          />
-                        </label>
-                      </div>
-
-                      {section.materials.length === 0 ? (
-                        <p className="text-sm text-gray-500">No materials added to this section yet.</p>
-                      ) : (
-                        <ul className="space-y-2">
-                          {section.materials.map((material, materialIndex) => (
-                            <li key={materialIndex} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                              <div className="flex items-center">
-                                <FiFile className="text-indigo-600 mr-2" />
-                                <span className="text-sm">
-                                  {material.name || material.originalName || material.filename}
-                                </span>
-                              </div>
-                              <div className="flex space-x-2">
-                                {material._id ? (
-                                  <>
-                                    <button
-                                      onClick={() => viewMaterial(material)}
-                                      className="text-indigo-600 hover:text-indigo-800 p-1"
-                                      title={(material.originalName || material.filename)?.endsWith('.pdf') ? "View" : "Download"}
-                                    >
-                                      {(material.originalName || material.filename)?.endsWith('.pdf') ? (
-                                        <FiEye size={16} />
-                                      ) : (
-                                        <FiDownload size={16} />
-                                      )}
-                                    </button>
-                                    <button
-                                      onClick={() => removeMaterial(sectionIndex, undefined, materialIndex)}
-                                      className="text-red-500 hover:text-red-700 p-1"
-                                      title="Remove"
-                                    >
-                                      <FiX size={16} />
-                                    </button>
-                                  </>
-                                ) : (
-                                  <>
-                                    <button
-                                      onClick={() => removeMaterial(sectionIndex, undefined, materialIndex)}
-                                      className="text-red-500 hover:text-red-700 p-1"
-                                      title="Remove"
-                                    >
-                                      <FiX size={16} />
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-
-                    {/* Lectures */}
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h4 className="text-sm font-medium text-gray-700">Lectures</h4>
-                        <button
-                          type="button"
-                          onClick={() => addNewLecture(sectionIndex)}
-                          className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-indigo-600 hover:bg-indigo-700"
+                  {course.sections.map((section, sectionIndex) => (
+                    <Draggable
+                      key={section.id}
+                      draggableId={section.id}
+                      index={sectionIndex}
+                      type="SECTION"
+                    >
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className="border border-gray-200 rounded-lg overflow-hidden"
                         >
-                          <FiPlus className="mr-1" /> Add Lecture
-                        </button>
-                      </div>
+                          <div
+                            {...provided.dragHandleProps}
+                            className={`px-4 py-3 flex justify-between items-center cursor-move ${section.isLocked ? 'bg-yellow-50' : 'bg-gray-50'}`}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <button
+                                type="button"
+                                onClick={() => toggleSection(sectionIndex)}
+                                className="text-gray-500 hover:text-gray-700"
+                              >
+                                {expandedSections[sectionIndex] ? <FiChevronUp size={18} /> : <FiChevronDown size={18} />}
+                              </button>
+                              <input
+                                type="text"
+                                value={section.title}
+                                onChange={(e) => updateSection(sectionIndex, 'title', e.target.value)}
+                                className={`bg-transparent font-medium ${section.isLocked ? 'text-yellow-800' : 'text-gray-800'} focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded px-2 py-1`}
+                              />
+                              {section.isLocked && (
+                                <span className="px-2 py-1 text-xs font-medium rounded bg-yellow-100 text-yellow-800">
+                                  Premium Content
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex space-x-2">
+                              <button
+                                type="button"
+                                onClick={() => removeSection(sectionIndex)}
+                                className="text-red-500 hover:text-red-700 p-1"
+                                title="Remove section"
+                              >
+                                <FiTrash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
 
-                      {section.lectures.length === 0 ? (
-                        <p className="text-sm text-gray-500">No lectures added to this section yet.</p>
-                      ) : (
-                        <div className="space-y-3">
-                          {section.lectures.map((lecture, lectureIndex) => (
-                            <div key={lectureIndex} className="border border-gray-200 rounded-lg p-4">
-                              <div className="flex justify-between items-center mb-3">
-                                <input
-                                  type="text"
-                                  value={lecture.title}
-                                  onChange={(e) => updateLecture(sectionIndex, lectureIndex, 'title', e.target.value)}
-                                  className="bg-transparent font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded px-2 py-1"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => removeLecture(sectionIndex, lectureIndex)}
-                                  className="text-red-500 hover:text-red-700 p-1"
-                                  title="Remove lecture"
-                                >
-                                  <FiTrash2 size={16} />
-                                </button>
-                              </div>
+                          {expandedSections[sectionIndex] && (
+                            <div className="p-4 space-y-4">
+                              <SectionLockControl
+                                isLocked={section.isLocked}
+                                price={section.price}
+                                isFree={section.isFree}
+                                onToggleLock={() => toggleSectionLock(sectionIndex)}
+                                onToggleFree={() => toggleSectionFree(sectionIndex)}
+                                onPriceChange={(e) => updateSectionPrice(sectionIndex, e.target.value)}
+                              />
 
-                              <div className="mb-3">
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Lecture Description</label>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Section Description</label>
                                 <textarea
-                                  value={lecture.description}
-                                  onChange={(e) => updateLecture(sectionIndex, lectureIndex, 'description', e.target.value)}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-                                  rows="2"
-                                  placeholder="Describe this lecture..."
+                                  value={section.description}
+                                  onChange={(e) => updateSection(sectionIndex, 'description', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                                  rows="3"
+                                  placeholder="Describe what this section covers..."
                                 ></textarea>
                               </div>
 
-                              <div className="mb-3">
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Video URL (optional)</label>
-                                <input
-                                  type="text"
-                                  value={lecture.videoUrl}
-                                  onChange={(e) => updateLecture(sectionIndex, lectureIndex, 'videoUrl', e.target.value)}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-                                  placeholder="https://youtube.com/embed/..."
-                                />
-                              </div>
-
-                              {/* Lecture Materials */}
-                              <div className="space-y-2">
+                              {/* Section Materials */}
+                              <div className="space-y-3">
                                 <div className="flex justify-between items-center">
-                                  <h5 className="text-xs font-medium text-gray-700">Lecture Materials</h5>
+                                  <h4 className="text-sm font-medium text-gray-700">Section Materials</h4>
                                   <label className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 cursor-pointer">
-                                    <FiUpload className="mr-1" /> Add Materials
                                     <input 
                                       type="file" 
                                       multiple 
-                                      onChange={(e) => handleMaterialsChange(sectionIndex, lectureIndex, e)} 
+                                      onChange={(e) => handleMaterialsChange(sectionIndex, undefined, e)} 
                                       className="hidden" 
                                     />
+                                    Add Materials
                                   </label>
                                 </div>
 
-                                {lecture.materials.length === 0 ? (
-                                  <p className="text-xs text-gray-500">No materials added to this lecture yet.</p>
+                                {section.materials.length === 0 ? (
+                                  <p className="text-sm text-gray-500">No materials added to this section yet.</p>
                                 ) : (
-                                  <ul className="space-y-1">
-                                    {lecture.materials.map((material, materialIndex) => (
-                                      <li key={materialIndex} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
-                                        <div className="flex items-center">
-                                          <FiFile className="text-indigo-600 mr-2" size={14} />
-                                          <span className="text-xs">
-                                            {material.name || material.originalName || material.filename}
-                                          </span>
-                                        </div>
-                                        <div className="flex space-x-2">
-                                          {material._id ? (
-                                            <>
-                                              <button
-                                                onClick={() => viewMaterial(material)}
-                                                className="text-indigo-600 hover:text-indigo-800 p-1"
-                                                title={(material.originalName || material.filename)?.endsWith('.pdf') ? "View" : "Download"}
-                                              >
-                                                {(material.originalName || material.filename)?.endsWith('.pdf') ? (
-                                                  <FiEye size={14} />
-                                                ) : (
-                                                  <FiDownload size={14} />
-                                                )}
-                                              </button>
-                                              <button
-                                                onClick={() => removeMaterial(sectionIndex, lectureIndex, materialIndex)}
-                                                className="text-red-500 hover:text-red-700 p-1"
-                                                title="Remove"
-                                              >
-                                                <FiX size={14} />
-                                              </button>
-                                            </>
-                                          ) : (
-                                            <>
-                                              <button
-                                                onClick={() => removeMaterial(sectionIndex, lectureIndex, materialIndex)}
-                                                className="text-red-500 hover:text-red-700 p-1"
-                                                title="Remove"
-                                              >
-                                                <FiX size={14} />
-                                              </button>
-                                            </>
-                                          )}
-                                        </div>
-                                      </li>
+                                  <ul className="space-y-2">
+                                    {section.materials.map((material, materialIndex) => (
+                                      <MaterialItem
+                                        key={materialIndex}
+                                        material={material}
+                                        onRemove={() => removeMaterial(sectionIndex, undefined, materialIndex)}
+                                        onView={() => viewMaterial(material)}
+                                      />
                                     ))}
                                   </ul>
                                 )}
                               </div>
+
+                              {/* Lectures Drag and Drop */}
+                              <div className="space-y-4">
+                                <div className="flex justify-between items-center">
+                                  <h4 className="text-sm font-medium text-gray-700">Lectures</h4>
+                                  <button
+                                    type="button"
+                                    onClick={() => addNewLecture(sectionIndex)}
+                                    className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-indigo-600 hover:bg-indigo-700"
+                                  >
+                                    <FiPlus className="mr-1" /> Add Lecture
+                                  </button>
+                                </div>
+
+                                <Droppable droppableId={section.id} type="LECTURE" isDropDisabled={false} >
+                                  {(provided) => (
+                                    <div
+                                      ref={provided.innerRef}
+                                      {...provided.droppableProps}
+                                      className="space-y-3"
+                                    >
+                                      {section.lectures.length === 0 ? (
+                                        <p className="text-sm text-gray-500">No lectures added to this section yet.</p>
+                                      ) : (
+                                        section.lectures.map((lecture, lectureIndex) => (
+                                          <Draggable
+                                            key={lecture.id}
+                                            draggableId={lecture.id}
+                                            index={lectureIndex}
+                                            
+                                          >
+                                            {(provided) => (
+                                              <div
+                                                ref={provided.innerRef}
+                                                {...provided.draggableProps}
+                                                {...provided.dragHandleProps}
+                                              >
+                                                <LectureItem
+                                                  key={lecture.id}
+                                                  lecture={lecture}
+                                                  lectureIndex={lectureIndex}
+                                                  sectionIndex={sectionIndex}
+                                                  onUpdateLecture={updateLecture}
+                                                  onRemoveLecture={removeLecture}
+                                                  onMaterialsChange={handleMaterialsChange}
+                                                  onRemoveMaterial={removeMaterial}
+                                                  onViewMaterial={viewMaterial}
+                                                />
+                                              </div>
+                                            )}
+                                          </Draggable>
+                                        ))
+                                      )}
+                                      {provided.placeholder}
+                                    </div>
+                                  )}
+                                </Droppable>
+                              </div>
+                              {/* End Lectures Drag and Drop */}
                             </div>
-                          ))}
+                          )}
                         </div>
                       )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <div className="pt-4">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              {submitting ? (
-                'Saving...'
-              ) : (
-                <>
-                  <FiCheck className="mr-2" />
-                  Save Course Structure
-                </>
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
               )}
-            </button>
+            </Droppable>
           </div>
-        </form>
-      </div>
+        </DragDropContext>
+        {/* End Course Sections with Drag and Drop */}
+
+        <div className="pt-4">
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {submitting ? (
+              'Saving...'
+            ) : (
+              <>
+                <FiCheck className="mr-2" />
+                Save Course Structure
+              </>
+            )}
+          </button>
+        </div>
+      </form>
     </div>
-  );
+  </div>
+);
+
 };
 
 export default CourseStructureEditor;

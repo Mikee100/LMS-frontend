@@ -3,16 +3,47 @@ import { useEffect, useState } from 'react';
 import { 
   FiFile, FiEye, FiDownload, FiCheckCircle, 
   FiAlertCircle, FiChevronRight, FiChevronDown,
-  FiPlay, FiClock, FiBookOpen
+  FiPlay, FiClock, FiBookOpen, FiLock, FiUnlock,
+  FiDollarSign, FiShoppingCart, FiStar
 } from 'react-icons/fi';
 import axios from 'axios';
 
 // Components
 const CourseHeader = ({ course, enrolled, enrolling, onEnroll }) => {
+  const [enrolledStudents, setEnrolledStudents] = useState([]);
+  const [error, setError] = useState(null);
+  
+  useEffect(() => {
+    if (!course) return;
+
+    const fetchEnrolledStudents = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(
+          `http://localhost:5000/api/courses/${course._id}/enrollments`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setEnrolledStudents(response.data);
+      } catch (err) {
+        console.error('Error fetching enrollments:', err);
+        setError('Failed to load enrolled students');
+      }
+    };
+    fetchEnrolledStudents();
+  }, [course?._id]);
+
+  const totalPremiumSections = course?.sections?.filter(s => s.isLocked && !s.isFree).length || 0;
+  const coursePrice = course?.isFree ? 0 : course?.price || 0;
+
   return (
-    <div className="mb-8 bg-gradient-to-r from-indigo-50 to-blue-50 p-6 rounded-xl">
-      <div className="max-w-3xl mx-auto">
+    <div className="mb-8 bg-gradient-to-r from-indigo-50 to-blue-50 p-6 rounded-xl relative overflow-hidden">
+      {/* Decorative elements */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-100 rounded-full opacity-20 transform translate-x-16 -translate-y-16"></div>
+      <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-100 rounded-full opacity-20 transform -translate-x-24 translate-y-24"></div>
+      
+      <div className="max-w-3xl mx-auto relative z-10">
         <h1 className="text-3xl md:text-4xl font-bold mb-2 text-indigo-900">{course.title}</h1>
+        
         <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 mb-4">
           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
             course.level === 'advanced' ? 'bg-red-100 text-red-800' :
@@ -24,53 +55,109 @@ const CourseHeader = ({ course, enrolled, enrolling, onEnroll }) => {
           <span>•</span>
           <span>{course.subject}</span>
           <span>•</span>
-          <span>{course.enrolledStudents || 0} students enrolled</span>
+          <span>{enrolledStudents.length || 0} students enrolled</span>
+          {course.rating && (
+            <>
+              <span>•</span>
+              <span className="flex items-center">
+                <FiStar className="mr-1 text-yellow-500" />
+                {course.rating.toFixed(1)}
+              </span>
+            </>
+          )}
         </div>
+        
         <p className="text-gray-700 mb-6 text-lg leading-relaxed">{course.description}</p>
         
-        {!enrolled ? (
-          <button
-            onClick={onEnroll}
-            disabled={enrolling}
-            className={`px-8 py-3 rounded-lg text-white font-medium text-lg transition-all shadow-md hover:shadow-lg ${
-              enrolling ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
-            }`}
-          >
-            {enrolling ? (
-              <span className="flex items-center">
-                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Enrolling...
-              </span>
-            ) : 'Enroll in Course'}
-          </button>
-        ) : (
-          <div className="flex items-center text-green-600 font-medium text-lg">
-            <FiCheckCircle className="mr-2" size={24} />
-            <span>You are enrolled in this course</span>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            {totalPremiumSections > 0 && !course.isFree && (
+              <div className="mb-3">
+                <span className="text-sm font-medium text-gray-600">
+                  Includes {totalPremiumSections} premium {totalPremiumSections === 1 ? 'section' : 'sections'}
+                </span>
+              </div>
+            )}
+            
+            {!enrolled ? (
+              <button
+                onClick={onEnroll}
+                disabled={enrolling}
+                className={`px-8 py-3 rounded-lg text-white font-medium text-lg transition-all shadow-md hover:shadow-lg ${
+                  enrolling ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
+                }`}
+              >
+                {enrolling ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Enrolling...
+                  </span>
+                ) : coursePrice > 0 ? (
+                  <span className="flex items-center">
+                    <FiShoppingCart className="mr-2" />
+                    Enroll for ${coursePrice}
+                  </span>
+                ) : (
+                  'Enroll for Free'
+                )}
+              </button>
+            ) : (
+              <div className="flex items-center text-green-600 font-medium text-lg">
+                <FiCheckCircle className="mr-2" size={24} />
+                <span>You are enrolled in this course</span>
+              </div>
+            )}
           </div>
-        )}
+          
+          {coursePrice > 0 && !enrolled && (
+            <div className="flex items-center bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
+              <FiDollarSign className="text-green-500 mr-2" />
+              <span className="font-medium text-gray-800">${coursePrice}</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
-const SectionItem = ({ section, isEnrolled }) => {
+const SectionItem = ({ section, isEnrolled, onUnlockSection }) => {
   const [expanded, setExpanded] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
 
-  const totalLectures = section.lectures?.length || 0;
-  const totalMaterials = section.materials?.length || 0;
+  // Ensure we properly check for locked status and free status
+  const isLocked = section.isLocked && !section.isFree && !isEnrolled;
+  const sectionPrice = section.price || 0;
+
+  const handleUnlock = async () => {
+    try {
+      setUnlocking(true);
+      await onUnlockSection(section._id, sectionPrice);
+    } finally {
+      setUnlocking(false);
+    }
+  };
 
   return (
-    <div className="border rounded-lg overflow-hidden mb-4">
+    <div className={`border rounded-lg overflow-hidden mb-4 ${
+      isLocked ? 'border-yellow-300 bg-yellow-50' : 'border-gray-200'
+    }`}>
       <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+        onClick={() => !isLocked && setExpanded(!expanded)}
+        className={`w-full flex justify-between items-center p-4 transition-colors ${
+          isLocked ? 'bg-yellow-50 hover:bg-yellow-100 cursor-pointer' : 'bg-gray-50 hover:bg-gray-100'
+        }`}
       >
         <div className="flex items-center">
-          <span className="font-medium text-lg text-gray-800">
+          {isLocked && (
+            <FiLock className="mr-3 text-yellow-600 flex-shrink-0" />
+          )}
+          <span className={`font-medium text-lg ${
+            isLocked ? 'text-yellow-800' : 'text-gray-800'
+          }`}>
             {section.title}
           </span>
           {section.description && (
@@ -80,21 +167,49 @@ const SectionItem = ({ section, isEnrolled }) => {
           )}
         </div>
         <div className="flex items-center">
-          <span className="text-sm text-gray-500 mr-4 hidden sm:inline-flex items-center">
-            <FiPlay className="mr-1" /> {totalLectures} lectures
-          </span>
-          <span className="text-sm text-gray-500 mr-4 hidden sm:inline-flex items-center">
-            <FiFile className="mr-1" /> {totalMaterials} resources
-          </span>
-          {expanded ? (
-            <FiChevronDown size={20} className="text-gray-600" />
+          {isLocked ? (
+            <span className="flex items-center bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+              <FiDollarSign className="mr-1" /> ${sectionPrice}
+            </span>
           ) : (
-            <FiChevronRight size={20} className="text-gray-600" />
+            <>
+              <span className="text-sm text-gray-500 mr-4 hidden sm:inline-flex items-center">
+                <FiPlay className="mr-1" /> {section.lectures?.length || 0} lectures
+              </span>
+              <span className="text-sm text-gray-500 mr-4 hidden sm:inline-flex items-center">
+                <FiFile className="mr-1" /> {section.materials?.length || 0} resources
+              </span>
+              {expanded ? (
+                <FiChevronDown size={20} className="text-gray-600" />
+              ) : (
+                <FiChevronRight size={20} className="text-gray-600" />
+              )}
+            </>
           )}
         </div>
       </button>
       
-      {expanded && (
+      {isLocked ? (
+        <div className="p-4 bg-white border-t border-yellow-200">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h4 className="font-medium text-yellow-800 mb-1">Premium Content</h4>
+              <p className="text-sm text-gray-600">
+                This section contains premium content. Unlock it to access all lectures and materials.
+              </p>
+            </div>
+            <button
+              onClick={handleUnlock}
+              disabled={unlocking}
+              className={`px-6 py-2 rounded-lg text-white font-medium ${
+                unlocking ? 'bg-yellow-500' : 'bg-yellow-600 hover:bg-yellow-700'
+              } whitespace-nowrap min-w-[120px] text-center`}
+            >
+              {unlocking ? 'Processing...' : `Unlock for $${sectionPrice}`}
+            </button>
+          </div>
+        </div>
+      ) : expanded && (
         <div className="p-4 bg-white border-t">
           {section.description && (
             <p className="text-gray-700 mb-4">{section.description}</p>
@@ -206,19 +321,21 @@ const MaterialItem = ({ material }) => {
   const isPDF = material.originalName?.endsWith('.pdf') || material.filename?.endsWith('.pdf');
   
   return (
-    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-      <div className="flex items-center">
+    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+      <div className="flex items-center min-w-0">
         <FiFile className={`mr-3 ${isPDF ? 'text-red-500' : 'text-indigo-600'}`} size={18} />
-        <div>
-          <span className="text-gray-800 block">{material.originalName || material.filename}</span>
+        <div className="min-w-0">
+          <span className="text-gray-800 block truncate" title={material.originalName || material.filename}>
+            {material.originalName || material.filename}
+          </span>
           <span className="text-xs text-gray-500">
             {material.contentType} • {Math.round((material.size || 0) / 1024)}KB
           </span>
         </div>
       </div>
       <button
-        onClick={() => window.open(`http://localhost:5000/api/courses/material/${material.filename}`, '_blank')}
-        className="text-indigo-600 hover:text-indigo-800 p-2 rounded-full hover:bg-indigo-50"
+        onClick={() => window.open(material.link, '_blank')}
+        className="text-indigo-600 hover:text-indigo-800 p-2 rounded-full hover:bg-indigo-50 flex-shrink-0"
         title={isPDF ? 'View' : 'Download'}
       >
         {isPDF ? <FiEye size={18} /> : <FiDownload size={18} />}
@@ -227,7 +344,7 @@ const MaterialItem = ({ material }) => {
   );
 };
 
-const CourseCurriculum = ({ course, isEnrolled }) => {
+const CourseCurriculum = ({ course, isEnrolled, onUnlockSection }) => {
   const totalSections = course.sections?.length || 0;
   const totalLectures = course.sections?.reduce((sum, section) => sum + (section.lectures?.length || 0), 0) || 0;
   const totalMaterials = course.sections?.reduce((sum, section) => {
@@ -235,6 +352,9 @@ const CourseCurriculum = ({ course, isEnrolled }) => {
       (section.materials?.length || 0) + 
       (section.lectures?.reduce((lecSum, lecture) => lecSum + (lecture.materials?.length || 0), 0) || 0);
   }, 0) || 0;
+  
+  const premiumSections = course.sections?.filter(s => s.isLocked && !s.isFree) || [];
+  const freeSections = course.sections?.filter(s => !s.isLocked || s.isFree) || [];
 
   return (
     <div className="mb-12">
@@ -250,16 +370,33 @@ const CourseCurriculum = ({ course, isEnrolled }) => {
           <span className="flex items-center">
             <FiFile className="mr-1" /> {totalMaterials} resources
           </span>
+          {premiumSections.length > 0 && (
+            <span className="flex items-center text-yellow-600">
+              <FiLock className="mr-1" /> {premiumSections.length} premium
+            </span>
+          )}
         </div>
       </div>
       
       {course.sections?.length > 0 ? (
         <div className="space-y-4">
-          {course.sections.map((section, index) => (
+          {/* Free sections first */}
+          {freeSections.map((section, index) => (
             <SectionItem 
               key={`section-${index}`} 
               section={section} 
               isEnrolled={isEnrolled}
+              onUnlockSection={onUnlockSection}
+            />
+          ))}
+          
+          {/* Premium sections */}
+          {premiumSections.map((section, index) => (
+            <SectionItem 
+              key={`premium-section-${index}`} 
+              section={section} 
+              isEnrolled={isEnrolled}
+              onUnlockSection={onUnlockSection}
             />
           ))}
         </div>
@@ -273,6 +410,9 @@ const CourseCurriculum = ({ course, isEnrolled }) => {
 };
 
 const CourseDetails = ({ course }) => {
+  const premiumSections = course.sections?.filter(s => s.isLocked && !s.isFree) || [];
+  const coursePrice = course.isFree ? 0 : course.price || 0;
+
   return (
     <div className="mb-12">
       <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Course Details</h2>
@@ -284,6 +424,18 @@ const CourseDetails = ({ course }) => {
           <p className="text-gray-700 leading-relaxed">
             {course.description || 'No additional description provided.'}
           </p>
+          
+          {premiumSections.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <h4 className="font-medium text-gray-800 mb-2 flex items-center">
+                <FiLock className="mr-2 text-yellow-600" /> Premium Content
+              </h4>
+              <p className="text-sm text-gray-600">
+                This course contains {premiumSections.length} premium {premiumSections.length === 1 ? 'section' : 'sections'} 
+                {coursePrice > 0 ? ' included with your enrollment.' : ' available for free.'}
+              </p>
+            </div>
+          )}
         </div>
         
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
@@ -313,6 +465,14 @@ const CourseDetails = ({ course }) => {
                 </span> for additional learning
               </span>
             </li>
+            {premiumSections.length > 0 && (
+              <li className="flex items-start">
+                <span className="text-yellow-500 mr-2 mt-1">•</span>
+                <span className="text-gray-700">
+                  <span className="font-medium">{premiumSections.length} Premium sections</span> with exclusive content
+                </span>
+              </li>
+            )}
           </ul>
         </div>
       </div>
@@ -389,6 +549,7 @@ const CourseView = () => {
   const [loading, setLoading] = useState(true);
   const [enrolled, setEnrolled] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
+  const [unlockingSection, setUnlockingSection] = useState(false);
   const [error, setError] = useState(null);
 
   // Fetch course details and enrollment status
@@ -453,6 +614,35 @@ const CourseView = () => {
     }
   };
 
+  const handleUnlockSection = async (sectionId, price) => {
+    try {
+      setUnlockingSection(true);
+      const token = localStorage.getItem('token');
+      
+      // In a real app, this would process payment for the section
+      // For demo purposes, we'll just simulate success
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Mark as enrolled (in a real app, you'd only unlock the specific section)
+      setEnrolled(true);
+      
+      // Refresh course data
+      const courseResponse = await axios.get(
+        `http://localhost:5000/api/students/courses/${courseId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setCourse(courseResponse.data);
+      
+      // Show success message
+      setError(null);
+    } catch (err) {
+      console.error('Unlock error:', err);
+      setError(err.response?.data?.message || 'Failed to unlock section');
+    } finally {
+      setUnlockingSection(false);
+    }
+  };
+
   const handleRetry = () => {
     window.location.reload();
   };
@@ -490,7 +680,11 @@ const CourseView = () => {
         <CourseDetails course={course} />
         
         {course.sections && (
-          <CourseCurriculum course={course} isEnrolled={enrolled} />
+          <CourseCurriculum 
+            course={course} 
+            isEnrolled={enrolled}
+            onUnlockSection={handleUnlockSection}
+          />
         )}
         
         {course.tutor && (

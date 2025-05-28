@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./Mainpage/ProtectedRoute";
 import RoleRedirect from "./Mainpage/RoleRedirect"; // New component
@@ -27,10 +27,45 @@ import CourseView from "./Students/CourseView";
 import EditCoursePage from "./Instructor/EditCoursePage";
 import TutorSchedulePage from "./Instructor/TutorScheduleCalendar";
 import CourseStructureEditor from "./Instructor/CourseStructureEditor";
+import TutorNotificationCenter from "./Instructor/TutorNotificationCenter";
+import TutorStudentsPage from "./Instructor/TutorStudentsPage";
+import TutorMessagingCenter from "./Instructor/Message/TutorMessagingCenter";
 
 
 
 function App() {
+
+
+  useEffect(() => {
+  const checkAuth = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      localStorage.removeItem('user');
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/verify-token', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!res.ok) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
+    } catch (err) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+  };
+
+  checkAuth();
+}, []);
+
   return (
     <BrowserRouter>
       <Routes>
@@ -68,7 +103,9 @@ function App() {
           <Route path="courses/add" element={<AddCourse />} />
           <Route path='courses/edit/:id' element={<CourseStructureEditor />} />
           <Route  path="schedule" element={<TutorSchedulePage />}  />
-    
+          <Route  path="notification" element={<TutorNotificationCenter /> }/>
+          <Route path="students" element={<TutorStudentsPage />} />
+          <Route path="messages" element={<TutorMessagingCenter />} />  
          
         </Route>
 
