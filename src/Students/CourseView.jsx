@@ -552,6 +552,44 @@ const CourseView = () => {
   const [unlockingSection, setUnlockingSection] = useState(false);
   const [error, setError] = useState(null);
 
+  const [progress, setProgress] = useState({ completedLectures: [] });
+
+
+
+  useEffect(() => {
+  const fetchProgress = async () => {
+    const token = localStorage.getItem('token');
+    const res = await axios.get(`http://localhost:5000/api/progress/${course._id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    setProgress(res.data || { completedLectures: [] });
+  };
+  fetchProgress();
+}, [course._id]);
+
+
+const totalLectures = course.sections?.reduce(
+  (sum, section) => sum + (section.lectures?.length || 0), 0
+);
+const completedLectures = progress.completedLectures?.length || 0;
+const progressPercent = totalLectures > 0
+  ? Math.round((completedLectures / totalLectures) * 100)
+  : 0;
+
+  const markLectureComplete = async (lectureId) => {
+  const token = localStorage.getItem('token');
+  await axios.post('http://localhost:5000/api/progress/complete', {
+    courseId: course._id,
+    lectureId
+  }, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  // Refetch progress
+  const res = await axios.get(`http://localhost:5000/api/progress/${course._id}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  setProgress(res.data || { completedLectures: [] });
+};
   // Fetch course details and enrollment status
   useEffect(() => {
     const fetchData = async () => {

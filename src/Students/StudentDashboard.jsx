@@ -14,6 +14,7 @@ import CourseFilter from './CourseFilter';
 import ScheduleCalendar from './ScheduleCalendar';
 import NotificationDropdown from './NotificationDropdown';
 import StudentNavBar from './StudentNavBar';
+import { useNavigate } from 'react-router-dom';
 
 
 const StudentDashboard = () => {
@@ -25,6 +26,12 @@ const StudentDashboard = () => {
   const [sortBy, setSortBy] = useState('recent');
   const [activeCategory, setActiveCategory] = useState('all');
   const [activeFilter, setActiveFilter] = useState('all');
+
+
+    const navigate = useNavigate();
+  const handleNotificationClick = () => {
+  navigate('/notifications');
+  }
 
 
   const filters = [
@@ -181,6 +188,7 @@ const StudentDashboard = () => {
     return <ErrorState error={error} onRetry={() => window.location.reload()} />;
   }
 
+
   return (
     <div>
        <StudentNavBar />
@@ -190,7 +198,9 @@ const StudentDashboard = () => {
           
           <p className="text-gray-600">Welcome back! Here's your learning overview</p>
         </div>
-
+<button onClick={handleNotificationClick} >
+  Notification
+</button>
          
    
         <div className="grid  lg:grid-cols-3 gap-8">

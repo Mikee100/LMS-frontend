@@ -30,6 +30,7 @@ import CourseStructureEditor from "./Instructor/CourseStructureEditor";
 import TutorNotificationCenter from "./Instructor/TutorNotificationCenter";
 import TutorStudentsPage from "./Instructor/TutorStudentsPage";
 import TutorMessagingCenter from "./Instructor/Message/TutorMessagingCenter";
+import StudentNotificationCenter from "./Students/NotificationPages/StudentNotificationCenter";
 
 
 
@@ -74,7 +75,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/instregistration" element={<InstructorRegistration />} />
         <Route path="/studentregistration" element={<StudentRegistration />} />
-
+      
         {/* Admin Routes */}
         <Route
           path="/admin"
@@ -110,6 +111,8 @@ function App() {
         </Route>
 
         {/* Role-based redirect after login */}
+          <Route path="/notifications" element={<StudentNotificationCenter/>}/>
+
         <Route path="/redirect-by-role" element={<RoleRedirect />} />
         <Route path="/student/dashboard" element={<StudentDashboard />}  />
         <Route path="/courses/:id" element={<CourseView />} />
