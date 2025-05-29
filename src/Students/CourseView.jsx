@@ -9,9 +9,27 @@ import {
 import axios from 'axios';
 
 // Components
-const CourseHeader = ({ course, enrolled, enrolling, onEnroll }) => {
+const CourseHeader = ({ course, enrolled, enrolling, onEnroll ,  progressPercent }) => {
+  // ...rest of your code }) => {
   const [enrolledStudents, setEnrolledStudents] = useState([]);
   const [error, setError] = useState(null);
+
+
+
+  const markLectureComplete = async (lectureId) => {
+  const token = localStorage.getItem('token');
+  await axios.post('http://localhost:5000/api/progress/complete', {
+    courseId: course._id,
+    lectureId
+  }, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  // Refetch progress
+  const res = await axios.get(`http://localhost:5000/api/progress/${course._id}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  setProgress(res.data || { completedLectures: [] });
+};
   
   useEffect(() => {
     if (!course) return;
@@ -110,6 +128,21 @@ const CourseHeader = ({ course, enrolled, enrolling, onEnroll }) => {
                 <span>You are enrolled in this course</span>
               </div>
             )}
+{enrolled && (
+  <div className="my-6">
+    <div className="flex justify-between items-center mb-1">
+      <span className="text-sm font-medium text-indigo-700">Course Progress</span>
+      <span className="text-sm text-gray-600">{progressPercent}%</span>
+    </div>
+    <div className="w-full bg-gray-200 rounded-full h-3">
+      <div
+        className="bg-indigo-600 h-3 rounded-full transition-all"
+        style={{ width: `${progressPercent}%` }}
+      ></div>
+    </div>
+  </div>
+)}
+            
           </div>
           
           {coursePrice > 0 && !enrolled && (
@@ -124,7 +157,7 @@ const CourseHeader = ({ course, enrolled, enrolling, onEnroll }) => {
   );
 };
 
-const SectionItem = ({ section, isEnrolled, onUnlockSection }) => {
+const SectionItem = ({ section, isEnrolled, onUnlockSection, completedLectures, markLectureComplete }) => {
   const [expanded, setExpanded] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
 
@@ -235,16 +268,18 @@ const SectionItem = ({ section, isEnrolled, onUnlockSection }) => {
               <h4 className="font-medium text-gray-800 mb-3 flex items-center">
                 <FiPlay className="mr-2" /> Lectures
               </h4>
-              <div className="space-y-4">
-                {section.lectures.map((lecture, lectureIndex) => (
-                  <LectureItem 
-                    key={`lecture-${lectureIndex}`} 
-                    lecture={lecture} 
-                    isEnrolled={isEnrolled}
-                    lectureNumber={lectureIndex + 1}
-                  />
-                ))}
-              </div>
+             <div className="space-y-4">
+        {section.lectures.map((lecture, lectureIndex) => (
+          <LectureItem 
+            key={`lecture-${lectureIndex}`} 
+            lecture={lecture} 
+            isEnrolled={isEnrolled}
+            lectureNumber={lectureIndex + 1}
+            completedLectures={completedLectures}
+            markLectureComplete={markLectureComplete}
+          />
+        ))}
+      </div>
             </div>
           ) : (
             <p className="text-gray-500 text-sm py-2">No lectures added yet</p>
@@ -255,8 +290,9 @@ const SectionItem = ({ section, isEnrolled, onUnlockSection }) => {
   );
 };
 
-const LectureItem = ({ lecture, isEnrolled, lectureNumber }) => {
+const LectureItem = ({ lecture, isEnrolled, lectureNumber, completedLectures = [], markLectureComplete }) => {
   const [expanded, setExpanded] = useState(false);
+  const isCompleted = completedLectures.includes(lecture._id);
 
   return (
     <div className="border rounded-lg overflow-hidden">
@@ -311,6 +347,19 @@ const LectureItem = ({ lecture, isEnrolled, lectureNumber }) => {
               </div>
             </div>
           )}
+          {isEnrolled && !isCompleted && (
+            <button
+              className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              onClick={() => markLectureComplete(lecture._id)}
+            >
+              Mark as Done
+            </button>
+          )}
+          {isEnrolled && isCompleted && (
+            <div className="mt-4 flex items-center text-green-600 font-medium">
+              <FiCheckCircle className="mr-2" /> Completed
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -344,7 +393,7 @@ const MaterialItem = ({ material }) => {
   );
 };
 
-const CourseCurriculum = ({ course, isEnrolled, onUnlockSection }) => {
+const CourseCurriculum = ({ course, isEnrolled, onUnlockSection, completedLectures, markLectureComplete }) => {
   const totalSections = course.sections?.length || 0;
   const totalLectures = course.sections?.reduce((sum, section) => sum + (section.lectures?.length || 0), 0) || 0;
   const totalMaterials = course.sections?.reduce((sum, section) => {
@@ -387,6 +436,8 @@ const CourseCurriculum = ({ course, isEnrolled, onUnlockSection }) => {
               section={section} 
               isEnrolled={isEnrolled}
               onUnlockSection={onUnlockSection}
+              completedLectures={completedLectures}
+              markLectureComplete={markLectureComplete}
             />
           ))}
           
@@ -397,6 +448,8 @@ const CourseCurriculum = ({ course, isEnrolled, onUnlockSection }) => {
               section={section} 
               isEnrolled={isEnrolled}
               onUnlockSection={onUnlockSection}
+              completedLectures={completedLectures}
+              markLectureComplete={markLectureComplete}
             />
           ))}
         </div>
@@ -551,12 +604,10 @@ const CourseView = () => {
   const [enrolling, setEnrolling] = useState(false);
   const [unlockingSection, setUnlockingSection] = useState(false);
   const [error, setError] = useState(null);
+   const [progress, setProgress] = useState({ completedLectures: [] });
 
-  const [progress, setProgress] = useState({ completedLectures: [] });
-
-
-
-  useEffect(() => {
+useEffect(() => {
+  if (!course || !enrolled) return;
   const fetchProgress = async () => {
     const token = localStorage.getItem('token');
     const res = await axios.get(`http://localhost:5000/api/progress/${course._id}`, {
@@ -565,31 +616,19 @@ const CourseView = () => {
     setProgress(res.data || { completedLectures: [] });
   };
   fetchProgress();
-}, [course._id]);
+}, [course, enrolled]);
 
 
-const totalLectures = course.sections?.reduce(
+
+
+  const totalLectures = course?.sections?.reduce(
   (sum, section) => sum + (section.lectures?.length || 0), 0
-);
+) || 0;
 const completedLectures = progress.completedLectures?.length || 0;
 const progressPercent = totalLectures > 0
   ? Math.round((completedLectures / totalLectures) * 100)
   : 0;
 
-  const markLectureComplete = async (lectureId) => {
-  const token = localStorage.getItem('token');
-  await axios.post('http://localhost:5000/api/progress/complete', {
-    courseId: course._id,
-    lectureId
-  }, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  // Refetch progress
-  const res = await axios.get(`http://localhost:5000/api/progress/${course._id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  setProgress(res.data || { completedLectures: [] });
-};
   // Fetch course details and enrollment status
   useEffect(() => {
     const fetchData = async () => {
@@ -712,17 +751,33 @@ const progressPercent = totalLectures > 0
         enrolled={enrolled} 
         enrolling={enrolling} 
         onEnroll={handleEnroll} 
-      />
+          progressPercent={progressPercent}
+     />
       
       <div className="max-w-4xl mx-auto">
         <CourseDetails course={course} />
         
         {course.sections && (
           <CourseCurriculum 
-            course={course} 
-            isEnrolled={enrolled}
-            onUnlockSection={handleUnlockSection}
-          />
+  course={course} 
+  isEnrolled={enrolled}
+  onUnlockSection={handleUnlockSection}
+  completedLectures={progress.completedLectures}
+  markLectureComplete={async (lectureId) => {
+    const token = localStorage.getItem('token');
+    await axios.post('http://localhost:5000/api/progress/complete', {
+      courseId: course._id,
+      lectureId
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    // Refetch progress
+    const res = await axios.get(`http://localhost:5000/api/progress/${course._id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    setProgress(res.data || { completedLectures: [] });
+  }}
+/>
         )}
         
         {course.tutor && (

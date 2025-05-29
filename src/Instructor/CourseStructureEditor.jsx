@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { useParams, useNavigate } from 'react-router-dom';
+import Select from 'react-select';
+
 import axios from 'axios';
 import { 
   FiUpload, 
@@ -24,11 +26,22 @@ import MaterialItem from './CourseEdit/MaterialItem';
 const CourseStructureEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-
+// Add this array at the top of your file or import from a constants file
+const SUBJECT_OPTIONS = [
+  { value: "Engineering", label: "Engineering" },
+  { value: "Computer Science", label: "Computer Science" },
+  { value: "Business", label: "Business" },
+  { value: "Design", label: "Design" },
+  { value: "Mathematics", label: "Mathematics" },
+  { value: "Marketing", label: "Marketing" },
+  { value: "Science", label: "Science" },
+  { value: "Arts", label: "Arts" },
+  { value: "Other", label: "Other" }
+];
   const [course, setCourse] = useState({
     title: '',
     description: '',
-    subject: '',
+    subjects: '',
     level: '',
     thumbnail: null,
     price: 0,
@@ -391,7 +404,7 @@ const viewMaterial = (material) => {
       const formData = new FormData();
       formData.append('title', course.title);
       formData.append('description', course.description);
-      formData.append('subject', course.subject);
+      formData.append('subjects', JSON.stringify(course.subjects || []));
       formData.append('level', course.level);
       formData.append('price', course.price);
       formData.append('isFree', course.isFree);
@@ -468,11 +481,112 @@ return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden p-6">
       <h2 className="text-2xl font-bold text-gray-800 mb-2">Edit Course Structure</h2>
       <p className="text-gray-600 mb-6">Organize your course into sections and lectures</p>
+      
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* ...course info fields... */}
-        {/* ...thumbnail upload... */}
 
+  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Course Title</label>
+              <input
+                type="text"
+                name="title"
+                value={course.title}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="e.g. Introduction to React"
+                required
+              />
+            </div>
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">Course Types / Subjects</label>
+  <Select
+    isMulti
+    name="subjects"
+    options={SUBJECT_OPTIONS}
+    value={SUBJECT_OPTIONS.filter(opt => (course.subjects || []).includes(opt.value))}
+    onChange={selected => {
+      setCourse(prev => ({
+        ...prev,
+        subjects: selected.map(opt => opt.value)
+      }));
+    }}
+    className="basic-multi-select"
+    classNamePrefix="select"
+    placeholder="Select one or more subjects..."
+  />
+  <p className="text-xs text-gray-500 mt-1">You can select multiple subjects.</p>
+</div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Level</label>
+            <select
+              name="level"
+              value={course.level}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+              required
+            >
+              <option value="">Select difficulty level</option>
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea
+              name="description"
+              value={course.description}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+              rows="4"
+              placeholder="Detailed course description..."
+            ></textarea>
+          </div>
+
+          <div className="space-y-4">
+            <label className="block text-sm font-medium text-gray-700">Course Thumbnail</label>
+            
+            <div className="flex items-center space-x-6">
+              {previewImage ? (
+                <div className="relative">
+                  <img 
+                    src={previewImage} 
+                    alt="Course thumbnail preview" 
+                    className="h-32 w-32 rounded-lg object-cover border"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreviewImage(null);
+                      setThumbnailFile(null);
+                    }}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                  >
+                    <FiX size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div className="h-32 w-32 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+                  <FiImage size={32} />
+                </div>
+              )}
+              
+              <label className="flex flex-col items-center px-4 py-3 bg-white rounded-lg border border-dashed border-gray-300 cursor-pointer hover:bg-gray-50">
+                <FiUpload className="text-indigo-600 mb-2" />
+                <span className="text-sm text-gray-600">Upload new thumbnail</span>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleThumbnailChange} 
+                  className="hidden" 
+                />
+              </label>
+            </div>
+          </div>
         {/* Course Sections with Drag and Drop */}
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="space-y-6">

@@ -1,10 +1,28 @@
 import { Link } from 'react-router-dom';
-
-const CourseCard = ({ course }) => {
+import { FiBookmark } from 'react-icons/fi';
+const CourseCard = ({ course, progressCount, isBookmarked, onBookmark = () => {} }) => {
+  
+   const totalLectures = course.sections?.reduce(
+    (sum, section) => sum + (section.lectures?.length || 0), 0
+  ) || 0;
+  const progressPercent = totalLectures > 0
+    ? Math.round((progressCount / totalLectures) * 100)
+    : 0;
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 border border-gray-100 flex flex-col h-full group">
       {/* Image with badges */}
+      
       <div className="relative aspect-video bg-gradient-to-r from-blue-50 to-indigo-50 overflow-hidden">
+       <button
+  className={`absolute top-3 right-3 z-10 rounded-full transition-colors duration-200 focus:ring-2 focus:ring-indigo-400 ${isBookmarked ? 'text-yellow-400' : 'text-gray-300'}`}
+  onClick={e => {
+    e.stopPropagation();
+    onBookmark();
+  }}
+  title={isBookmarked ? 'Remove Bookmark' : 'Bookmark this course'}
+>
+  <FiBookmark size={22} />
+</button>
         <img 
           src={course.thumbnail || 'https://source.unsplash.com/random/600x400/?education,learning'} 
           alt={course.title}
@@ -33,6 +51,7 @@ const CourseCard = ({ course }) => {
           {course.title}
         </h3>
         
+        
         {/* Description */}
         <p className="text-gray-600 text-sm mb-4 line-clamp-3">
           {course.description}
@@ -43,8 +62,28 @@ const CourseCard = ({ course }) => {
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
-          <span className="truncate">{course.subject}</span>
+         <div className="flex flex-wrap gap-2 mb-2">
+  {(course.subjects || []).map(subject => (
+    <span key={subject} className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-xs font-medium">
+      {subject}
+    </span>
+  ))}
+</div>
         </div>
+        {progressPercent > 0 && (
+  <div className="mt-2">
+    <div className="flex justify-between items-center mb-1">
+      <span className="text-xs text-indigo-700">Progress</span>
+      <span className="text-xs text-gray-600">{progressPercent}%</span>
+    </div>
+    <div className="w-full bg-gray-200 rounded-full h-2">
+      <div
+        className="bg-indigo-600 h-2 rounded-full transition-all"
+        style={{ width: `${progressPercent}%` }}
+      ></div>
+    </div>
+  </div>
+)}
         
         {/* Meta info (duration and price) */}
         <div className="flex justify-between items-center mt-auto pt-3 border-t border-gray-100">

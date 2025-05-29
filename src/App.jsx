@@ -31,6 +31,7 @@ import TutorNotificationCenter from "./Instructor/TutorNotificationCenter";
 import TutorStudentsPage from "./Instructor/TutorStudentsPage";
 import TutorMessagingCenter from "./Instructor/Message/TutorMessagingCenter";
 import StudentNotificationCenter from "./Students/NotificationPages/StudentNotificationCenter";
+import BookmarkedCoursesPage from "./Students/Interests/BookmarkedCourses";
 
 
 
@@ -75,6 +76,8 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/instregistration" element={<InstructorRegistration />} />
         <Route path="/studentregistration" element={<StudentRegistration />} />
+      
+      <Route path="/bookmarks" element={<BookmarkedCoursesPage />} />
       
         {/* Admin Routes */}
         <Route
