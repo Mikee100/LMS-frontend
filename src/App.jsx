@@ -2,6 +2,8 @@ import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./Mainpage/ProtectedRoute";
 import RoleRedirect from "./Mainpage/RoleRedirect"; // New component
+// At the top with other imports
+import { Toaster } from 'react-hot-toast';
 
 // Layouts
 import AdminLayout from "./Admin/AdminLayout";
@@ -38,38 +40,9 @@ import BookmarkedCoursesPage from "./Students/Interests/BookmarkedCourses";
 function App() {
 
 
-  useEffect(() => {
-  const checkAuth = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      localStorage.removeItem('user');
-      return;
-    }
-
-    try {
-      const res = await fetch('http://localhost:5000/api/auth/verify-token', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (!res.ok) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
-      }
-    } catch (err) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-    }
-  };
-
-  checkAuth();
-}, []);
-
   return (
     <BrowserRouter>
+      <Toaster position="top-right" />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LMSLanding />} />

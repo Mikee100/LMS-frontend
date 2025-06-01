@@ -44,39 +44,60 @@ useEffect(() => {
     document.removeEventListener('mousedown', handleClickOutside);
   };
 }, []);
-
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
 
   return (
     <div className="relative">
       {/* Top Navbar */}
-      <nav className="bg-blue-600 text-white px-4 py-6 flex justify-between items-center shadow-md">
-        <button onClick={toggleMenu} className="focus:outline-none">
-          {menuOpen ? <X size={28} /> : <Menu size={28} />}
-        </button>
-        <div className="ml-auto flex items-center">
-          <button
-  className="relative focus:outline-none ml-4"
-  title="Saved Courses"
-  onClick={() => navigate('/bookmarks')}
->
-  <FiBookmark className="text-white text-2xl" />
-</button>
-          
-          <button
-            className="relative focus:outline-none"
-            title="Notifications"
-           onClick={() => navigate('/notifications')} 
-          >
-            <FiBell className="text-white text-2xl" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {unreadCount}
-              </span>
-            )}
-          </button>
-        </div>
-        <div className="w-8"></div> {/* Spacer for balance */}
-      </nav>
+ <nav className="bg-white border-b border-blue-100 px-4 py-3 flex items-center shadow-sm fixed top-0 left-0 w-full z-50">
+  {/* Hamburger Menu - always at far left */}
+  <button
+    onClick={toggleMenu}
+    className="rounded-full p-2 hover:bg-blue-50 transition focus:outline-none mr-3"
+    title="Menu"
+  >
+    {menuOpen ? <X size={28} /> : <Menu size={28} />}
+  </button>
+  {/* Logo and App Name */}
+  <div className="flex items-center gap-2">
+    <img src="https://th.bing.com/th/id/OIP.cKmLA9BIXU1cBa8rDkIrIAHaFJ?cb=iwp2&rs=1&pid=ImgDetMain" alt="Logo" className="h-8 w-8 rounded-full" />
+    <span className="text-blue-700 font-bold text-lg tracking-tight">LMS</span>
+  </div>
+  {/* Spacer */}
+  <div className="flex-1" />
+  {/* Right Side Icons */}
+  <div className="flex items-center gap-2">
+    <button
+      className="relative rounded-full p-2 hover:bg-blue-50 transition"
+      title="Saved Courses"
+      onClick={() => navigate('/bookmarks')}
+    >
+      <FiBookmark className="text-blue-600 text-xl" />
+    </button>
+    <button
+      className="relative rounded-full p-2 hover:bg-blue-50 transition"
+      title="Notifications"
+      onClick={() => navigate('/notifications')}
+    >
+      <FiBell className="text-blue-600 text-xl" />
+      {unreadCount > 0 && (
+        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center border-2 border-white">
+          {unreadCount}
+        </span>
+      )}
+    </button>
+    <button
+      onClick={handleLogout}
+      className="rounded-full p-2 hover:bg-blue-50 transition"
+      title="Logout"
+    >
+      <LogOut className="text-blue-600 text-xl" />
+    </button>
+  </div>
+</nav>
 
       {/* Slide-in Menu */}
       <AnimatePresence>
@@ -145,7 +166,7 @@ useEffect(() => {
                 
                 <li 
                   className="flex items-center gap-3 p-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md cursor-pointer transition-colors"
-                  onClick={() => setMenuOpen(false)}
+                  onClick={handleLogout}
                 >
                   <LogOut size={20} className="flex-shrink-0" /> 
                   <span>Logout</span>

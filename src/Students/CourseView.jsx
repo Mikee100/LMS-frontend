@@ -7,33 +7,18 @@ import {
   FiDollarSign, FiShoppingCart, FiStar
 } from 'react-icons/fi';
 import axios from 'axios';
+import { motion, AnimatePresence } from 'framer-motion';
+import toast, { Toaster } from 'react-hot-toast';
+import CourseProgressBar from './CourseProgressBar';
+
 
 // Components
-const CourseHeader = ({ course, enrolled, enrolling, onEnroll ,  progressPercent }) => {
-  // ...rest of your code }) => {
+const CourseHeader = ({ course, enrolled, enrolling, onEnroll, progressPercent }) => {
   const [enrolledStudents, setEnrolledStudents] = useState([]);
   const [error, setError] = useState(null);
 
-
-
-  const markLectureComplete = async (lectureId) => {
-  const token = localStorage.getItem('token');
-  await axios.post('http://localhost:5000/api/progress/complete', {
-    courseId: course._id,
-    lectureId
-  }, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  // Refetch progress
-  const res = await axios.get(`http://localhost:5000/api/progress/${course._id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  setProgress(res.data || { completedLectures: [] });
-};
-  
   useEffect(() => {
     if (!course) return;
-
     const fetchEnrolledStudents = async () => {
       try {
         const token = localStorage.getItem('token');
@@ -43,7 +28,6 @@ const CourseHeader = ({ course, enrolled, enrolling, onEnroll ,  progressPercent
         );
         setEnrolledStudents(response.data);
       } catch (err) {
-        console.error('Error fetching enrollments:', err);
         setError('Failed to load enrolled students');
       }
     };
@@ -54,49 +38,37 @@ const CourseHeader = ({ course, enrolled, enrolling, onEnroll ,  progressPercent
   const coursePrice = course?.isFree ? 0 : course?.price || 0;
 
   return (
-    <div className="mb-8 bg-gradient-to-r from-indigo-50 to-blue-50 p-6 rounded-xl relative overflow-hidden">
-      {/* Decorative elements */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-100 rounded-full opacity-20 transform translate-x-16 -translate-y-16"></div>
-      <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-100 rounded-full opacity-20 transform -translate-x-24 translate-y-24"></div>
-      
-      <div className="max-w-3xl mx-auto relative z-10">
-        <h1 className="text-3xl md:text-4xl font-bold mb-2 text-indigo-900">{course.title}</h1>
-        
-        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 mb-4">
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-            course.level === 'advanced' ? 'bg-red-100 text-red-800' :
-            course.level === 'intermediate' ? 'bg-yellow-100 text-yellow-800' :
-            'bg-green-100 text-green-800'
-          }`}>
-            {course.level}
-          </span>
-          <span>•</span>
-          <span>{course.subject}</span>
-          <span>•</span>
-          <span>{enrolledStudents.length || 0} students enrolled</span>
-          {course.rating && (
-            <>
-              <span>•</span>
-              <span className="flex items-center">
-                <FiStar className="mr-1 text-yellow-500" />
-                {course.rating.toFixed(1)}
-              </span>
-            </>
-          )}
-        </div>
-        
-        <p className="text-gray-700 mb-6 text-lg leading-relaxed">{course.description}</p>
-        
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            {totalPremiumSections > 0 && !course.isFree && (
-              <div className="mb-3">
-                <span className="text-sm font-medium text-gray-600">
-                  Includes {totalPremiumSections} premium {totalPremiumSections === 1 ? 'section' : 'sections'}
-                </span>
-              </div>
-            )}
-            
+    <div className="mb-8 relative rounded-xl overflow-hidden shadow-lg">
+      {/* Banner Image */}
+      <div className="h-56 md:h-72 w-full relative">
+        <img
+          src={course.coverImage || "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=800&q=80"}
+          alt={course.title}
+          className="w-full h-full object-cover"
+        />
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/80 to-blue-900/60" />
+        {/* Header Content */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+          className="absolute inset-0 flex flex-col justify-end p-6 md:p-10"
+        >
+          <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow mb-2">{course.title}</h1>
+          <div className="flex flex-wrap items-center gap-3 text-indigo-100 mb-3">
+            <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide ${
+              course.level === 'advanced' ? 'bg-red-600/80' :
+              course.level === 'intermediate' ? 'bg-yellow-500/80' :
+              'bg-green-600/80'
+            }`}>
+              {course.level}
+            </span>
+            <span>{course.subject}</span>
+            <span className="flex items-center"><FiStar className="mr-1 text-yellow-300" />{course.rating?.toFixed(1) || 'N/A'}</span>
+            <span>{enrolledStudents.length || 0} students</span>
+          </div>
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
             {!enrolled ? (
               <button
                 onClick={onEnroll}
@@ -123,45 +95,46 @@ const CourseHeader = ({ course, enrolled, enrolling, onEnroll ,  progressPercent
                 )}
               </button>
             ) : (
-              <div className="flex items-center text-green-600 font-medium text-lg">
+              <div className="flex items-center text-green-200 font-medium text-lg">
                 <FiCheckCircle className="mr-2" size={24} />
                 <span>You are enrolled in this course</span>
               </div>
             )}
-{enrolled && (
-  <div className="my-6">
-    <div className="flex justify-between items-center mb-1">
-      <span className="text-sm font-medium text-indigo-700">Course Progress</span>
-      <span className="text-sm text-gray-600">{progressPercent}%</span>
-    </div>
-    <div className="w-full bg-gray-200 rounded-full h-3">
-      <div
-        className="bg-indigo-600 h-3 rounded-full transition-all"
-        style={{ width: `${progressPercent}%` }}
-      ></div>
-    </div>
-  </div>
-)}
-            
+            {coursePrice > 0 && !enrolled && (
+              <div className="flex items-center bg-white/80 px-4 py-2 rounded-lg shadow-sm border border-gray-200 text-gray-900 font-semibold">
+                <FiDollarSign className="text-green-500 mr-2" />
+                ${coursePrice}
+              </div>
+            )}
           </div>
-          
-          {coursePrice > 0 && !enrolled && (
-            <div className="flex items-center bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
-              <FiDollarSign className="text-green-500 mr-2" />
-              <span className="font-medium text-gray-800">${coursePrice}</span>
+          {/* Progress Bar */}
+          {enrolled && (
+            <div className="mt-6 w-full max-w-md">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-sm font-medium text-indigo-100">Course Progress</span>
+                <span className="text-sm text-indigo-100">{progressPercent}%</span>
+              </div>
+              <div className="w-full bg-indigo-200/40 rounded-full h-3">
+                <motion.div
+                  className="bg-green-400 h-3 rounded-full transition-all"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progressPercent}%` }}
+                  transition={{ duration: 0.7 }}
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
             </div>
           )}
-        </div>
+        </motion.div>
       </div>
     </div>
   );
 };
 
-const SectionItem = ({ section, isEnrolled, onUnlockSection, completedLectures, markLectureComplete }) => {
+const SectionItem = ({ section, isEnrolled, onUnlockSection, completedLectures, markLectureComplete, activeLectureId, setActiveLectureId }) => {
   const [expanded, setExpanded] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
 
-  // Ensure we properly check for locked status and free status
   const isLocked = section.isLocked && !section.isFree && !isEnrolled;
   const sectionPrice = section.price || 0;
 
@@ -212,163 +185,237 @@ const SectionItem = ({ section, isEnrolled, onUnlockSection, completedLectures, 
               <span className="text-sm text-gray-500 mr-4 hidden sm:inline-flex items-center">
                 <FiFile className="mr-1" /> {section.materials?.length || 0} resources
               </span>
-              {expanded ? (
+              <motion.span
+                animate={{ rotate: expanded ? 180 : 0 }}
+                transition={{ duration: 0.3 }}
+              >
                 <FiChevronDown size={20} className="text-gray-600" />
-              ) : (
-                <FiChevronRight size={20} className="text-gray-600" />
-              )}
+              </motion.span>
             </>
           )}
         </div>
       </button>
-      
-      {isLocked ? (
-        <div className="p-4 bg-white border-t border-yellow-200">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <h4 className="font-medium text-yellow-800 mb-1">Premium Content</h4>
-              <p className="text-sm text-gray-600">
-                This section contains premium content. Unlock it to access all lectures and materials.
-              </p>
-            </div>
-            <button
-              onClick={handleUnlock}
-              disabled={unlocking}
-              className={`px-6 py-2 rounded-lg text-white font-medium ${
-                unlocking ? 'bg-yellow-500' : 'bg-yellow-600 hover:bg-yellow-700'
-              } whitespace-nowrap min-w-[120px] text-center`}
-            >
-              {unlocking ? 'Processing...' : `Unlock for $${sectionPrice}`}
-            </button>
-          </div>
-        </div>
-      ) : expanded && (
-        <div className="p-4 bg-white border-t">
-          {section.description && (
-            <p className="text-gray-700 mb-4">{section.description}</p>
-          )}
-          
-          {/* Section Materials */}
-          {isEnrolled && section.materials?.length > 0 && (
-            <div className="mb-6">
-              <h4 className="font-medium text-gray-800 mb-3 flex items-center">
-                <FiFile className="mr-2" /> Section Resources
-              </h4>
-              <div className="space-y-3">
-                {section.materials.map((material, matIndex) => (
-                  <MaterialItem key={`section-mat-${matIndex}`} material={material} />
-                ))}
+      {/* Animate section content */}
+      <AnimatePresence initial={false}>
+        {isLocked ? (
+          <motion.div
+            key="locked"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="p-4 bg-white border-t border-yellow-200">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <h4 className="font-medium text-yellow-800 mb-1">Premium Content</h4>
+                  <p className="text-sm text-gray-600">
+                    This section contains premium content. Unlock it to access all lectures and materials.
+                  </p>
+                </div>
+                <button
+                  onClick={handleUnlock}
+                  disabled={unlocking}
+                  className={`px-6 py-2 rounded-lg text-white font-medium ${
+                    unlocking ? 'bg-yellow-500' : 'bg-yellow-600 hover:bg-yellow-700'
+                  } whitespace-nowrap min-w-[120px] text-center`}
+                >
+                  {unlocking ? 'Processing...' : `Unlock for $${sectionPrice}`}
+                </button>
               </div>
             </div>
-          )}
-          
-          {/* Lectures */}
-          {section.lectures?.length > 0 ? (
-            <div>
-              <h4 className="font-medium text-gray-800 mb-3 flex items-center">
-                <FiPlay className="mr-2" /> Lectures
-              </h4>
-             <div className="space-y-4">
-        {section.lectures.map((lecture, lectureIndex) => (
-          <LectureItem 
-            key={`lecture-${lectureIndex}`} 
-            lecture={lecture} 
-            isEnrolled={isEnrolled}
-            lectureNumber={lectureIndex + 1}
-            completedLectures={completedLectures}
-            markLectureComplete={markLectureComplete}
-          />
-        ))}
-      </div>
-            </div>
-          ) : (
-            <p className="text-gray-500 text-sm py-2">No lectures added yet</p>
-          )}
-        </div>
-      )}
+          </motion.div>
+        ) : (
+          <AnimatePresence>
+            {expanded && (
+              <motion.div
+                key="expanded"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="p-4 bg-white border-t">
+                  {section.description && (
+                    <p className="text-gray-700 mb-4">{section.description}</p>
+                  )}
+                  {/* Section Materials */}
+                  {isEnrolled && section.materials?.length > 0 && (
+                    <div className="mb-6">
+                      <h4 className="font-medium text-gray-800 mb-3 flex items-center">
+                        <FiFile className="mr-2" /> Section Resources
+                      </h4>
+                      <div className="space-y-3">
+                        {section.materials.map((material, matIndex) => (
+                          <MaterialItem key={`section-mat-${matIndex}`} material={material} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* Lectures */}
+                  {section.lectures?.length > 0 ? (
+                    <div>
+                      <h4 className="font-medium text-gray-800 mb-3 flex items-center">
+                        <FiPlay className="mr-2" /> Lectures
+                      </h4>
+                      <div className="space-y-4">
+
+{section.lectures.map((lecture, lectureIndex) => (
+  <LectureItem
+    key={`lecture-${lectureIndex}`}
+    lecture={lecture}
+    isEnrolled={isEnrolled}
+    lectureNumber={lectureIndex + 1}
+    completedLectures={completedLectures}
+    markLectureComplete={markLectureComplete}
+    activeLectureId={activeLectureId}
+    setActiveLectureId={setActiveLectureId}
+    isLocked={
+      // Only allow opening if all previous lectures are completed
+      lectureIndex > 0 &&
+      !completedLectures.includes(section.lectures[lectureIndex - 1]._id)
+    }
+  />
+))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm py-2">No lectures added yet</p>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
-const LectureItem = ({ lecture, isEnrolled, lectureNumber, completedLectures = [], markLectureComplete }) => {
+
+const LectureItem = ({ lecture, isEnrolled, lectureNumber, completedLectures = [], markLectureComplete, activeLectureId, setActiveLectureId,isLocked }) => {
   const [expanded, setExpanded] = useState(false);
   const isCompleted = completedLectures.includes(lecture._id);
+  const isActive = activeLectureId === lecture._id;
 
+  const handleExpand = () => {
+    setExpanded(!expanded);
+    setActiveLectureId(lecture._id);
+  };
+
+ // 0758152148
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className={`border rounded-lg overflow-hidden transition-colors duration-200 mb-4
+      ${isActive ? 'ring-2 ring-indigo-400 bg-indigo-50/70' : ''}
+    `}>
       <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex justify-between items-center p-3 bg-blue-50 hover:bg-blue-100 transition-colors"
+        onClick={handleExpand}
+        className={`w-full flex justify-between items-center p-4 transition-colors
+          ${isActive ? 'bg-indigo-50' : 'bg-blue-50 hover:bg-blue-100'}
+        `}
+        disabled={isLocked}
       >
-        <div className="flex items-center">
+         <div className="flex items-center">
           <span className="font-medium text-gray-800">
             Lecture {lectureNumber}: {lecture.title}
           </span>
+          {isLocked && (
+            <FiLock className="ml-2 text-yellow-600" title="Complete previous lecture to unlock" />
+          )}
         </div>
-        {expanded ? (
-          <FiChevronDown size={18} className="text-gray-600" />
-        ) : (
-          <FiChevronRight size={18} className="text-gray-600" />
-        )}
-      </button>
-      
-      {expanded && (
-        <div className="p-4 bg-white border-t">
-          {lecture.description && (
-            <p className="text-gray-700 mb-4">{lecture.description}</p>
-          )}
-          
-          {/* Video Content */}
-          {lecture.videoUrl && isEnrolled && (
-            <div className="mb-4">
-              <div className="aspect-w-16 aspect-h-9 bg-black rounded-lg overflow-hidden">
-                <iframe
-                  src={lecture.videoUrl.replace('watch?v=', 'embed/')}
-                  className="w-full h-full"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  title={lecture.title}
-                ></iframe>
-              </div>
-            </div>
-          )}
-          
-          {/* Lecture Materials */}
-          {isEnrolled && lecture.materials?.length > 0 && (
-            <div>
-              <h5 className="font-medium text-gray-800 mb-2 flex items-center text-sm">
-                <FiFile className="mr-2" /> Lecture Resources
-              </h5>
-              <div className="space-y-2">
-                {lecture.materials.map((material, matIndex) => (
-                  <MaterialItem key={`lecture-mat-${matIndex}`} material={material} />
-                ))}
-              </div>
-            </div>
-          )}
-          {isEnrolled && !isCompleted && (
-            <button
-              className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-              onClick={() => markLectureComplete(lecture._id)}
+        <div className="flex items-center gap-2">
+          {isCompleted && (
+            <motion.span
+              initial={{ scale: 0, rotate: -90 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              className="text-green-600"
             >
-              Mark as Done
-            </button>
+              <FiCheckCircle size={18} />
+            </motion.span>
           )}
-          {isEnrolled && isCompleted && (
-            <div className="mt-4 flex items-center text-green-600 font-medium">
-              <FiCheckCircle className="mr-2" /> Completed
-            </div>
+          {expanded ? (
+            <FiChevronDown size={18} className="text-gray-600" />
+          ) : (
+            <FiChevronRight size={18} className="text-gray-600" />
           )}
         </div>
-      )}
+      </button>
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="p-6 bg-white border-t flex flex-col gap-6">
+              {lecture.description && (
+                <p className="text-gray-700 mb-2">{lecture.description}</p>
+              )}
+              {/* Video Content */}
+              {lecture.videoUrl && isEnrolled && (
+                <div className="w-full flex justify-center">
+                  <div className="w-full max-w-3xl aspect-video bg-black rounded-lg overflow-hidden shadow-lg">
+                    <iframe
+                      src={lecture.videoUrl.replace('watch?v=', 'embed/')}
+                      className="w-full h-full"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title={lecture.title}
+                    ></iframe>
+                  </div>
+                </div>
+              )}
+              {/* Lecture Materials */}
+              {isEnrolled && lecture.materials?.length > 0 && (
+                <div>
+                  <h5 className="font-medium text-gray-800 mb-2 flex items-center text-sm">
+                    <FiFile className="mr-2" /> Lecture Resources
+                  </h5>
+                  <div className="space-y-2">
+                    {lecture.materials.map((material, matIndex) => (
+                      <MaterialItem key={`lecture-mat-${matIndex}`} material={material} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {isEnrolled && !isCompleted && (
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                  onClick={() => markLectureComplete(lecture._id)}
+                >
+                  Mark as Done
+                </motion.button>
+              )}
+              {isEnrolled && isCompleted && (
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="mt-4 flex items-center text-green-600 font-medium"
+                >
+                  <FiCheckCircle className="mr-2" /> Completed
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
 const MaterialItem = ({ material }) => {
   const isPDF = material.originalName?.endsWith('.pdf') || material.filename?.endsWith('.pdf');
-  
+  // Construct the file URL if not present
+  const fileUrl = material.link
+    ? material.link
+    : material.path
+      ? `http://localhost:5000/${material.path.replace(/\\/g, '/')}`
+      : '#';
+
   return (
     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
       <div className="flex items-center min-w-0">
@@ -383,7 +430,7 @@ const MaterialItem = ({ material }) => {
         </div>
       </div>
       <button
-        onClick={() => window.open(material.link, '_blank')}
+        onClick={() => window.open(fileUrl, '_blank')}
         className="text-indigo-600 hover:text-indigo-800 p-2 rounded-full hover:bg-indigo-50 flex-shrink-0"
         title={isPDF ? 'View' : 'Download'}
       >
@@ -393,7 +440,7 @@ const MaterialItem = ({ material }) => {
   );
 };
 
-const CourseCurriculum = ({ course, isEnrolled, onUnlockSection, completedLectures, markLectureComplete }) => {
+const CourseCurriculum = ({ course, isEnrolled, onUnlockSection, completedLectures, markLectureComplete, activeLectureId, setActiveLectureId }) => {
   const totalSections = course.sections?.length || 0;
   const totalLectures = course.sections?.reduce((sum, section) => sum + (section.lectures?.length || 0), 0) || 0;
   const totalMaterials = course.sections?.reduce((sum, section) => {
@@ -404,7 +451,7 @@ const CourseCurriculum = ({ course, isEnrolled, onUnlockSection, completedLectur
   
   const premiumSections = course.sections?.filter(s => s.isLocked && !s.isFree) || [];
   const freeSections = course.sections?.filter(s => !s.isLocked || s.isFree) || [];
-
+const isCourseCompleted = completedLectures === totalLectures && totalLectures > 0;
   return (
     <div className="mb-12">
       <div className="flex justify-between items-center mb-6">
@@ -438,6 +485,8 @@ const CourseCurriculum = ({ course, isEnrolled, onUnlockSection, completedLectur
               onUnlockSection={onUnlockSection}
               completedLectures={completedLectures}
               markLectureComplete={markLectureComplete}
+                activeLectureId={activeLectureId}
+              setActiveLectureId={setActiveLectureId}
             />
           ))}
           
@@ -450,6 +499,8 @@ const CourseCurriculum = ({ course, isEnrolled, onUnlockSection, completedLectur
               onUnlockSection={onUnlockSection}
               completedLectures={completedLectures}
               markLectureComplete={markLectureComplete}
+               activeLectureId={activeLectureId}
+              setActiveLectureId={setActiveLectureId}
             />
           ))}
         </div>
@@ -458,6 +509,19 @@ const CourseCurriculum = ({ course, isEnrolled, onUnlockSection, completedLectur
           <p>No curriculum available yet.</p>
         </div>
       )}
+      {isCourseCompleted && (
+  <div className="flex justify-center mt-8">
+    <button
+      className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition"
+      onClick={() => {
+        // Replace with your navigation logic to the next course
+        window.location.href = "/courses"; // or use navigate("/courses/nextCourseId")
+      }}
+    >
+      Go to Next Course
+    </button>
+  </div>
+)}
     </div>
   );
 };
@@ -605,6 +669,7 @@ const CourseView = () => {
   const [unlockingSection, setUnlockingSection] = useState(false);
   const [error, setError] = useState(null);
    const [progress, setProgress] = useState({ completedLectures: [] });
+  const [activeLectureId, setActiveLectureId] = useState(null);
 
 useEffect(() => {
   if (!course || !enrolled) return;
@@ -662,67 +727,63 @@ const progressPercent = totalLectures > 0
 
     fetchData();
   }, [courseId]);
+const handleEnroll = async () => {
+  try {
+    setEnrolling(true);
+    const token = localStorage.getItem('token');
 
-  const handleEnroll = async () => {
-    try {
-      setEnrolling(true);
-      const token = localStorage.getItem('token');
+    const response = await axios.post(
+      `http://localhost:5000/api/enroll/students`,
+      { courseId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      const response = await axios.post(
-        `http://localhost:5000/api/enroll/students`,
-        { courseId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (response.data.enrolled) {
-        setEnrolled(true);
-        // Refresh course data
-        const courseResponse = await axios.get(
-          `http://localhost:5000/api/students/courses/${courseId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setCourse(courseResponse.data);
-      }
-    } catch (err) {
-      console.error('Enrollment error:', err);
-      setError(err.response?.data?.message || 'Failed to enroll in course');
-    } finally {
-      setEnrolling(false);
-    }
-  };
-
-  const handleUnlockSection = async (sectionId, price) => {
-    try {
-      setUnlockingSection(true);
-      const token = localStorage.getItem('token');
-      
-      // In a real app, this would process payment for the section
-      // For demo purposes, we'll just simulate success
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mark as enrolled (in a real app, you'd only unlock the specific section)
+    if (response.data.enrolled) {
       setEnrolled(true);
-      
       // Refresh course data
       const courseResponse = await axios.get(
         `http://localhost:5000/api/students/courses/${courseId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setCourse(courseResponse.data);
-      
-      // Show success message
-      setError(null);
-    } catch (err) {
-      console.error('Unlock error:', err);
-      setError(err.response?.data?.message || 'Failed to unlock section');
-    } finally {
-      setUnlockingSection(false);
+      toast.success('Enrolled successfully!');
     }
-  };
+  } catch (err) {
+    console.error('Enrollment error:', err);
+    setError(err.response?.data?.message || 'Failed to enroll in course');
+    toast.error('Failed to enroll in course');
+  } finally {
+    setEnrolling(false);
+  }
+};
+
+const handleUnlockSection = async (sectionId, price) => {
+  try {
+    setUnlockingSection(true);
+    const token = localStorage.getItem('token');
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setEnrolled(true);
+    const courseResponse = await axios.get(
+      `http://localhost:5000/api/students/courses/${courseId}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setCourse(courseResponse.data);
+    setError(null);
+    toast.success('Section unlocked!');
+  } catch (err) {
+    console.error('Unlock error:', err);
+    setError(err.response?.data?.message || 'Failed to unlock section');
+    toast.error('Failed to unlock section');
+  } finally {
+    setUnlockingSection(false);
+  }
+};
 
   const handleRetry = () => {
     window.location.reload();
   };
+
+  
 
   // Loading state
   if (loading) {
@@ -745,14 +806,16 @@ const progressPercent = totalLectures > 0
 
   // Main render
   return (
+    <>
+     <CourseProgressBar percent={progressPercent} />
     <div className="max-w-6xl mx-auto px-4 py-8">
       <CourseHeader 
         course={course} 
         enrolled={enrolled} 
         enrolling={enrolling} 
         onEnroll={handleEnroll} 
-          progressPercent={progressPercent}
-     />
+        progressPercent={progressPercent}
+      />
       
       <div className="max-w-4xl mx-auto">
         <CourseDetails course={course} />
@@ -763,7 +826,7 @@ const progressPercent = totalLectures > 0
   isEnrolled={enrolled}
   onUnlockSection={handleUnlockSection}
   completedLectures={progress.completedLectures}
-  markLectureComplete={async (lectureId) => {
+ markLectureComplete={async (lectureId) => {
     const token = localStorage.getItem('token');
     await axios.post('http://localhost:5000/api/progress/complete', {
       courseId: course._id,
@@ -776,7 +839,10 @@ const progressPercent = totalLectures > 0
       headers: { Authorization: `Bearer ${token}` }
     });
     setProgress(res.data || { completedLectures: [] });
+    toast.success('Lecture marked as complete!');
   }}
+    activeLectureId={activeLectureId}
+            setActiveLectureId={setActiveLectureId}
 />
         )}
         
@@ -785,6 +851,8 @@ const progressPercent = totalLectures > 0
         )}
       </div>
     </div>
+
+     </>
   );
 };
 

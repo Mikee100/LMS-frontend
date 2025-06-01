@@ -11,39 +11,53 @@ const CourseCard = ({ course, progressCount, isBookmarked, onBookmark = () => {}
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 border border-gray-100 flex flex-col h-full group">
       {/* Image with badges */}
-      
-      <div className="relative aspect-video bg-gradient-to-r from-blue-50 to-indigo-50 overflow-hidden">
-       <button
-  className={`absolute top-3 right-3 z-10 rounded-full transition-colors duration-200 focus:ring-2 focus:ring-indigo-400 ${isBookmarked ? 'text-yellow-400' : 'text-gray-300'}`}
-  onClick={e => {
-    e.stopPropagation();
-    onBookmark();
-  }}
-  title={isBookmarked ? 'Remove Bookmark' : 'Bookmark this course'}
->
-  <FiBookmark size={22} />
-</button>
-        <img 
-          src={course.thumbnail || 'https://source.unsplash.com/random/600x400/?education,learning'} 
-          alt={course.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-        <div className="absolute top-3 right-3 flex gap-2">
-          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-            course.level === 'Advanced' ? 'bg-red-100 text-red-800' :
-            course.level === 'Intermediate' ? 'bg-yellow-100 text-yellow-800' :
-            'bg-green-100 text-green-800'
-          }`}>
-            {course.level || 'Beginner'}
-          </span>
-          {course.isNew && (
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              New
-            </span>
-          )}
-        </div>
-      </div>
-
+      <div className="relative aspect-video bg-gradient-to-r from-blue-50 to-indigo-50 overflow-hidden group">
+  <button
+    className={`absolute top-3 right-3 z-10 rounded-full transition-colors duration-200 focus:ring-2 focus:ring-indigo-400 ${isBookmarked ? 'text-yellow-400' : 'text-gray-300'}`}
+    onClick={e => {
+      e.stopPropagation();
+      onBookmark();
+    }}
+    title={isBookmarked ? 'Remove Bookmark' : 'Bookmark this course'}
+  >
+    <FiBookmark size={22} />
+  </button>
+  <img
+    src={
+      course.thumbnail?.path
+        ? `http://localhost:5000/${course.thumbnail.path.replace(/\\/g, '/')}`
+        : 'https://source.unsplash.com/random/600x400/?education,learning'
+    }
+    alt={course.title}
+    loading="lazy"
+    onError={e => {
+      e.target.onerror = null;
+      e.target.src = 'https://source.unsplash.com/random/600x400/?education,learning';
+    }}
+    className="w-full h-full object-cover rounded-t-xl border-b border-gray-100 shadow-sm transition-transform duration-300 group-hover:scale-105 bg-gray-100"
+    style={{
+      minHeight: 180,
+      maxHeight: 220,
+      objectFit: 'cover',
+      objectPosition: 'center',
+      background: 'linear-gradient(90deg, #e0e7ff 0%, #f1f5f9 100%)'
+    }}
+  />
+  <div className="absolute top-3 left-3 flex gap-2">
+    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+      course.level === 'Advanced' ? 'bg-red-100 text-red-800' :
+      course.level === 'Intermediate' ? 'bg-yellow-100 text-yellow-800' :
+      'bg-green-100 text-green-800'
+    }`}>
+      {course.level || 'Beginner'}
+    </span>
+    {course.isNew && (
+      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+        New
+      </span>
+    )}
+  </div>
+</div>
       {/* Content */}
       <div className="p-5 flex flex-col flex-grow">
         {/* Title */}

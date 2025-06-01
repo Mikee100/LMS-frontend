@@ -24,11 +24,11 @@ export const AuthProvider = ({ children }) => {
           const data = await response.json();
           setCurrentUser(data.user); // Assuming your API returns { user: { email, role, ... } }
         } else {
-          localStorage.removeItem('token');
+          
         }
       } catch (error) {
         console.error('Failed to fetch user', error);
-        localStorage.removeItem('token');
+       
       }
     };
 

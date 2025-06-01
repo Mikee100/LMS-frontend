@@ -97,10 +97,11 @@ useEffect(() => {
       });
 
       let courseData = response.data;
-      if (!courseData.sections) {
-        courseData.sections = [];
-      }
-
+     // Set preview image if thumbnail path exists
+if (courseData.thumbnail?.path) {
+  setPreviewImage(`http://localhost:5000/${courseData.thumbnail.path.replace(/\\/g, '/')}`);
+}
+console.log('Fetched course data:', courseData.thumbnail);
       // Normalize IDs and structure for sections and lectures
       courseData.sections = (courseData.sections || []).map(section => ({
         ...section,
@@ -117,13 +118,7 @@ useEffect(() => {
 
       setCourse(courseData);
 
-      // Set preview image if thumbnail exists
-      if (courseData.thumbnail?.data) {
-        const base64String = btoa(
-          String.fromCharCode(...new Uint8Array(courseData.thumbnail.data.data || courseData.thumbnail.data))
-        );
-        setPreviewImage(`data:image/jpeg;base64,${base64String}`);
-      }
+     
 
       // Expand all sections by default
       const expanded = {};
@@ -329,22 +324,25 @@ const updateLecture = (sectionIndex, lectureIndex, field, value) => {
     });
   };
 
-  const handleMaterialsChange = (sectionIndex, lectureIndex, e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
+const handleMaterialsChange = (sectionIndex, lectureIndex, e) => {
+  const files = Array.from(e.target.files);
+  if (files.length === 0) return;
 
-    if (lectureIndex !== undefined) {
-      updateLecture(sectionIndex, lectureIndex, 'materials', [
-        ...course.sections[sectionIndex].lectures[lectureIndex].materials,
-        ...files
-      ]);
-    } else {
-      updateSection(sectionIndex, 'materials', [
-        ...course.sections[sectionIndex].materials,
-        ...files
-      ]);
-    }
-  };
+  if (lectureIndex !== undefined) {
+    updateLecture(sectionIndex, lectureIndex, 'materials', [
+      ...(course.sections[sectionIndex].lectures[lectureIndex].materials || []),
+      ...files
+    ]);
+  } else {
+    updateSection(sectionIndex, 'materials', [
+      ...(course.sections[sectionIndex].materials || []),
+      ...files
+    ]);
+  }
+};
+
+
+
 
   const removeMaterial = (sectionIndex, lectureIndex, materialIndex) => {
     if (lectureIndex !== undefined) {
@@ -411,22 +409,22 @@ const viewMaterial = (material) => {
       formData.append('sections', JSON.stringify(course.sections));
 
       if (thumbnailFile) formData.append('thumbnail', thumbnailFile);
+course.sections.forEach((section, sectionIndex) => {
+  section.materials.forEach((material) => {
+    if (material instanceof File) {
+      formData.append(`section_${sectionIndex}_material`, material);
+    }
+    // Don't append if it's already uploaded (has filename)
+  });
 
-      course.sections.forEach((section, sectionIndex) => {
-        section.materials.forEach((material, materialIndex) => {
-          if (material instanceof File) {
-            formData.append(`section_${sectionIndex}_material`, material);
-          }
-        });
-
-        section.lectures.forEach((lecture, lectureIndex) => {
-          lecture.materials.forEach((material, materialIndex) => {
-            if (material instanceof File) {
-              formData.append(`section_${sectionIndex}_lecture_${lectureIndex}_material`, material);
-            }
-          });
-        });
-      });
+         section.lectures.forEach((lecture, lectureIndex) => {
+    lecture.materials.forEach((material) => {
+      if (material instanceof File) {
+        formData.append(`section_${sectionIndex}_lecture_${lectureIndex}_material`, material);
+      }
+    });
+  });
+});
 
       const token = localStorage.getItem('token');
 
@@ -551,29 +549,23 @@ return (
             <label className="block text-sm font-medium text-gray-700">Course Thumbnail</label>
             
             <div className="flex items-center space-x-6">
-              {previewImage ? (
-                <div className="relative">
-                  <img 
-                    src={previewImage} 
-                    alt="Course thumbnail preview" 
-                    className="h-32 w-32 rounded-lg object-cover border"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPreviewImage(null);
-                      setThumbnailFile(null);
-                    }}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                  >
-                    <FiX size={16} />
-                  </button>
-                </div>
-              ) : (
-                <div className="h-32 w-32 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
-                  <FiImage size={32} />
-                </div>
-              )}
+           {previewImage ? (
+  <img
+    src={previewImage}
+    alt="Course thumbnail preview"
+    className="h-32 w-32 rounded-lg object-cover border"
+  />
+) : course.thumbnail?.path ? (
+  <img
+    src={`http://localhost:5000/${course.thumbnail.path.replace(/\\/g, '/')}`}
+    alt="Course thumbnail"
+    className="h-32 w-32 rounded-lg object-cover border"
+  />
+) : (
+  <div className="h-32 w-32 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+    <FiImage size={32} />
+  </div>
+)}
               
               <label className="flex flex-col items-center px-4 py-3 bg-white rounded-lg border border-dashed border-gray-300 cursor-pointer hover:bg-gray-50">
                 <FiUpload className="text-indigo-600 mb-2" />
@@ -773,6 +765,52 @@ return (
                                   )}
                                 </Droppable>
                               </div>
+
+                                  <div className="flex justify-end pt-4">
+  <button
+    type="button"
+    className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium"
+    onClick={async () => {
+  // Find the first PDF in section.materials
+  const pdfMaterial = section.materials.find(
+    (mat) =>
+      ((mat.originalName || mat.filename || mat.name || '').toLowerCase().endsWith('.pdf'))
+  );
+  if (!pdfMaterial) {
+    toast.error('No PDF material found in this section.');
+    return;
+  }
+  if (pdfMaterial instanceof File) {
+    toast.error('Please save the course first before generating assignments from newly uploaded PDFs.');
+    return;
+  }
+  try {
+    const token = localStorage.getItem('token');
+    const res = await axios.post(
+      'http://localhost:5000/api/assignments/generate',
+      {
+        materialFilename: pdfMaterial.filename,
+        sectionId: section.id,
+        courseId: id,
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    toast.success('Assignment generated!');
+    // Optionally, update state with the new assignment
+  } catch (err) {
+    toast.error(
+      err.response?.data?.message ||
+        'Failed to generate assignment from PDF.'
+    );
+  }
+}}
+  >
+    Generate Assignment from Section PDFs
+  </button>
+</div>
+
                               {/* End Lectures Drag and Drop */}
                             </div>
                           )}
