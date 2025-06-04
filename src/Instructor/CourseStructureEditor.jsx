@@ -82,6 +82,17 @@ const SUBJECT_OPTIONS = [
       return { ...prev, sections };
     });
   }
+
+ console.log('Section materials:', section.materials);
+section.materials.forEach((mat, idx) => {
+  console.log(
+    `Material ${idx}:`,
+    'originalName:', mat.originalName,
+    'filename:', mat.filename,
+    'name:', mat.name,
+    'isFile:', mat instanceof File
+  );
+});
 };
 
 
@@ -101,8 +112,7 @@ useEffect(() => {
 if (courseData.thumbnail?.path) {
   setPreviewImage(`http://localhost:5000/${courseData.thumbnail.path.replace(/\\/g, '/')}`);
 }
-console.log('Fetched course data:', courseData.thumbnail);
-      // Normalize IDs and structure for sections and lectures
+
       courseData.sections = (courseData.sections || []).map(section => ({
         ...section,
         id: section.id && String(section.id).trim() ? String(section.id) : `${Date.now()}_${Math.random()}`,
@@ -409,23 +419,38 @@ const viewMaterial = (material) => {
       formData.append('sections', JSON.stringify(course.sections));
 
       if (thumbnailFile) formData.append('thumbnail', thumbnailFile);
-course.sections.forEach((section, sectionIndex) => {
+for (let sectionIndex = 0; sectionIndex < course.sections.length; sectionIndex++) {
+  const section = course.sections[sectionIndex];
+  // Section materials
+  const sectionMaterialsMeta = [];
   section.materials.forEach((material) => {
     if (material instanceof File) {
       formData.append(`section_${sectionIndex}_material`, material);
+      sectionMaterialsMeta.push({ originalName: material.name });
+    } else {
+      sectionMaterialsMeta.push(material);
     }
-    // Don't append if it's already uploaded (has filename)
   });
+  formData.append(`section_${sectionIndex}_materials_meta`, JSON.stringify(sectionMaterialsMeta));
 
-         section.lectures.forEach((lecture, lectureIndex) => {
+  // Lectures
+  for (let lectureIndex = 0; lectureIndex < section.lectures.length; lectureIndex++) {
+    const lecture = section.lectures[lectureIndex];
+    const lectureMaterialsMeta = [];
     lecture.materials.forEach((material) => {
       if (material instanceof File) {
         formData.append(`section_${sectionIndex}_lecture_${lectureIndex}_material`, material);
+        lectureMaterialsMeta.push({ originalName: material.name });
+      } else {
+        lectureMaterialsMeta.push(material);
       }
     });
-  });
-});
-
+    formData.append(
+      `section_${sectionIndex}_lecture_${lectureIndex}_materials_meta`,
+      JSON.stringify(lectureMaterialsMeta)
+    );
+  }
+}
       const token = localStorage.getItem('token');
 
       await axios.put(`http://localhost:5000/api/courses/${id}/structured`, formData, {
@@ -770,11 +795,25 @@ return (
   <button
     type="button"
     className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium"
-    onClick={async () => {
+ onClick={async () => {
+  // Debug: Log section materials before searching for PDF
+  console.log('Section materials:', section.materials);
+  section.materials.forEach((mat, idx) => {
+    console.log(
+      `Material ${idx}:`,
+      'originalName:', mat.originalName,
+      'filename:', mat.filename,
+      'name:', mat.name,
+      'isFile:', mat instanceof File
+    );
+  });
+
   // Find the first PDF in section.materials
   const pdfMaterial = section.materials.find(
-    (mat) =>
-      ((mat.originalName || mat.filename || mat.name || '').toLowerCase().endsWith('.pdf'))
+    (mat) => {
+      const name = (mat.originalName || mat.filename || mat.name || '').toLowerCase();
+      return name.endsWith('.pdf');
+    }
   );
   if (!pdfMaterial) {
     toast.error('No PDF material found in this section.');
@@ -798,7 +837,6 @@ return (
       }
     );
     toast.success('Assignment generated!');
-    // Optionally, update state with the new assignment
   } catch (err) {
     toast.error(
       err.response?.data?.message ||
