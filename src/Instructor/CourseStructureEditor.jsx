@@ -26,6 +26,9 @@ import MaterialItem from './CourseEdit/MaterialItem';
 const CourseStructureEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  const [assignments, setAssignments] = useState([]);
+
 // Add this array at the top of your file or import from a constants file
 const SUBJECT_OPTIONS = [
   { value: "Engineering", label: "Engineering" },
@@ -95,7 +98,15 @@ section.materials.forEach((mat, idx) => {
 });
 };
 
-
+useEffect(() => {
+  const fetchAssignments = async () => {
+    const res = await axios.get('http://localhost:5000/api/assignments', {
+      params: { courseId: id }
+    });
+    setAssignments(res.data);
+  };
+  fetchAssignments();
+}, [id])
 
 useEffect(() => {
   const fetchCourseDetails = async () => {
@@ -848,13 +859,27 @@ return (
     Generate Assignment from Section PDFs
   </button>
 </div>
-
+{assignments
+  .filter(a => a.sectionId === section.id)
+  .map((assignment, idx) => (
+    <div key={assignment._id} className="bg-green-50 p-3 rounded mb-2">
+      <h5 className="font-semibold text-green-700 mb-1">Generated Assignment</h5>
+      <ol className="list-decimal ml-5 text-green-900">
+        {assignment.questions.map((q, i) => (
+          <li key={i}>{q}</li>
+        ))}
+      </ol>
+      <span className="text-xs text-gray-400">Created: {new Date(assignment.createdAt).toLocaleString()}</span>
+    </div>
+  ))}
                               {/* End Lectures Drag and Drop */}
                             </div>
                           )}
                         </div>
                       )}
                     </Draggable>
+                  
+                  
                   ))}
                   {provided.placeholder}
                 </div>
