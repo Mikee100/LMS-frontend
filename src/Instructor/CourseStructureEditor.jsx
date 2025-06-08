@@ -108,6 +108,7 @@ useEffect(() => {
   fetchAssignments();
 }, [id])
 
+
 useEffect(() => {
   const fetchCourseDetails = async () => {
     try {
@@ -780,17 +781,21 @@ return (
                                                 {...provided.draggableProps}
                                                 {...provided.dragHandleProps}
                                               >
-                                                <LectureItem
-                                                  key={lecture.id}
-                                                  lecture={lecture}
-                                                  lectureIndex={lectureIndex}
-                                                  sectionIndex={sectionIndex}
-                                                  onUpdateLecture={updateLecture}
-                                                  onRemoveLecture={removeLecture}
-                                                  onMaterialsChange={handleMaterialsChange}
-                                                  onRemoveMaterial={removeMaterial}
-                                                  onViewMaterial={viewMaterial}
-                                                />
+                                                
+<LectureItem
+  key={lecture.id}
+  lecture={lecture}
+  lectureIndex={lectureIndex}
+  sectionIndex={sectionIndex}
+  onUpdateLecture={updateLecture}
+  onRemoveLecture={removeLecture}
+  onMaterialsChange={handleMaterialsChange}
+  onRemoveMaterial={removeMaterial}
+  onViewMaterial={viewMaterial}
+  sectionId={section.id}         // <-- add this
+  courseId={id}                  // <-- add this (or whatever your course id variable is)
+  token={localStorage.getItem('token')} // <-- add this if you want to pass token directly
+/>
                                               </div>
                                             )}
                                           </Draggable>
@@ -859,20 +864,16 @@ return (
     Generate Assignment from Section PDFs
   </button>
 </div>
-{assignments
-  .filter(a => a.sectionId === section.id)
-  .map((assignment, idx) => (
-    <div key={assignment._id} className="bg-green-50 p-3 rounded mb-2">
-      <h5 className="font-semibold text-green-700 mb-1">Generated Assignment</h5>
-      <ol className="list-decimal ml-5 text-green-900">
-        {assignment.questions.map((q, i) => (
-          <li key={i}>{q}</li>
-        ))}
-      </ol>
-      <span className="text-xs text-gray-400">Created: {new Date(assignment.createdAt).toLocaleString()}</span>
-    </div>
-  ))}
-                              {/* End Lectures Drag and Drop */}
+{assignments.map((assignment, idx) => (
+  <div key={assignment._id} className="bg-green-50 p-3 rounded mb-2">
+    <h5>{assignment.sectionId}</h5>
+    <ol className="list-decimal ml-5 text-green-900">
+      {assignment.questions?.map((q, i) => (
+        <li key={i}>{q}</li>
+      ))}
+    </ol>
+  </div>
+))}
                             </div>
                           )}
                         </div>

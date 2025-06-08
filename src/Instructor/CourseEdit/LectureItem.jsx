@@ -1,7 +1,8 @@
-// LectureItem.js
-import React from 'react';
-import { FiTrash2, FiVideo, FiEdit2 } from 'react-icons/fi';
+import React, { useEffect, useState } from 'react';
+import { FiTrash2, FiVideo } from 'react-icons/fi';
 import MaterialItem from './MaterialItem';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const LectureItem = ({
   lecture,
@@ -11,8 +12,80 @@ const LectureItem = ({
   onRemoveLecture,
   onMaterialsChange,
   onRemoveMaterial,
-  onViewMaterial
+  onViewMaterial,
+  sectionId,
+  courseId,
+  token
 }) => {
+  const [assignments, setAssignments] = useState([]);
+
+  // Fetch assignments for this lecture
+  useEffect(() => {
+    const fetchAssignments = async () => {
+      if (!courseId || !sectionId || !lecture.id) return;
+      try {
+        const res = await axios.get('http://localhost:5000/api/assignments', {
+          params: {
+            courseId,
+            sectionId,
+            lectureId: lecture.id,
+          },
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setAssignments(res.data);
+      } catch (err) {
+        // Optionally handle error
+      }
+    };
+    fetchAssignments();
+  }, [courseId, sectionId, lecture.id, token]);
+
+  // Handler for generating assignment from lecture PDF
+  const handleGenerateAssignment = async () => {
+    const pdfMaterial = lecture.materials.find(mat => {
+      const name = (mat.originalName || mat.filename || mat.name || '').toLowerCase();
+      return name.endsWith('.pdf');
+    });
+    if (!pdfMaterial) {
+      toast.error('No PDF material found in this lecture.');
+      return;
+    }
+    if (pdfMaterial instanceof File) {
+      toast.error('Please save the course first before generating assignments from newly uploaded PDFs.');
+      return;
+    }
+    try {
+      await axios.post(
+        'http://localhost:5000/api/assignments/generate',
+        {
+          materialFilename: pdfMaterial.filename,
+          sectionId: sectionId,
+          lectureId: lecture.id,
+          courseId: courseId,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      toast.success('Assignment generated from lecture PDF!');
+      // Refresh assignments after generation
+      const res = await axios.get('http://localhost:5000/api/assignments', {
+        params: {
+          courseId,
+          sectionId,
+          lectureId: lecture.id,
+        },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setAssignments(res.data);
+    } catch (err) {
+      toast.error(
+        err.response?.data?.message ||
+          'Failed to generate assignment from lecture PDF.'
+      );
+    }
+  };
+
   return (
     <div className="border border-gray-200 rounded-lg p-4 mb-3 bg-white">
       <div className="flex justify-between items-center mb-3">
@@ -86,6 +159,27 @@ const LectureItem = ({
               />
             ))}
           </ul>
+        )}
+        {/* Generate Assignment Button */}
+        <button
+          type="button"
+          className="inline-flex items-center px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-xs mt-2"
+          onClick={handleGenerateAssignment}
+        >
+          Generate Assignment from Lecture PDFs
+        </button>
+        {/* Show generated assignments for this lecture */}
+        {assignments.length > 0 && (
+          <div className="mt-3 bg-green-50 p-3 rounded">
+            <h5 className="text-xs font-semibold text-green-700 mb-1">Generated Assignments</h5>
+            {assignments.map((assignment, idx) => (
+              <ol key={assignment._id || idx} className="list-decimal ml-5 text-green-900 mb-2">
+                {assignment.questions?.map((q, i) => (
+                  <li key={i}>{q}</li>
+                ))}
+              </ol>
+            ))}
+          </div>
         )}
       </div>
     </div>
