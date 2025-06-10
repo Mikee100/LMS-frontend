@@ -46,6 +46,7 @@ const TutorNav = () => {
           <NavItem to="/tutor/schedule" icon={<FaCog />} text="Schedules" isExpanded={isExpanded} />
           <NavItem to="/tutor/students" icon={<FaCog />} text="Students" isExpanded={isExpanded} />
           <NavItem to="/tutor/messages" icon={<FaCog />} text="Messages" isExpanded={isExpanded} />
+           <NavItem to="/tutor/payments" icon={<FaCog />} text="Payments" isExpanded={isExpanded} />
         </nav>
       </div>
 

@@ -34,6 +34,7 @@ import TutorStudentsPage from "./Instructor/TutorStudentsPage";
 import TutorMessagingCenter from "./Instructor/Message/TutorMessagingCenter";
 import StudentNotificationCenter from "./Students/NotificationPages/StudentNotificationCenter";
 import BookmarkedCoursesPage from "./Students/Interests/BookmarkedCourses";
+import TutorPayments from "./Instructor/TutorPayments";
 
 
 
@@ -83,6 +84,7 @@ function App() {
           <Route  path="notification" element={<TutorNotificationCenter /> }/>
           <Route path="students" element={<TutorStudentsPage />} />
           <Route path="messages" element={<TutorMessagingCenter />} />  
+          <Route path="payments" element={<TutorPayments />} />
          
         </Route>
 

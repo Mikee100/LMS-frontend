@@ -1,4 +1,3 @@
-
 import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { 
@@ -23,42 +22,50 @@ const PaymentForm = ({ enrollmentId, amount, onPaymentSuccess, onPaymentError, o
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    if (!stripe || !elements) return;
+  console.log('PaymentForm mounted with enrollmentId:', enrollmentId, 'and amount:', amount);
 
-    setProcessing(true);
+const handleSubmit = async (event) => {
+  event.preventDefault();
+  if (!stripe || !elements) return;
 
-    try {
-      // Create payment intent on backend
-      const { data } = await axios.post('http://localhost:5000/api/payments/create-intent', {
-        enrollmentId,
-        amount,
-      });
+  setProcessing(true);
 
-      const clientSecret = data.clientSecret;
+  try {
+    // Create payment intent on backend
+    const token = localStorage.getItem('token');
+    const { data } = await axios.post(
+      'http://localhost:5000/api/payments/create-intent',
+      { enrollmentId, amount },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      // Confirm card payment
-      const result = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: elements.getElement(CardElement),
-        }
-      });
+    const clientSecret = data.clientSecret;
 
-      if (result.error) {
-        onPaymentError(result.error.message);
-      } else {
-        if (result.paymentIntent.status === 'succeeded') {
-          onPaymentSuccess();
-          onClose();
-        }
+    // Confirm card payment
+    const result = await stripe.confirmCardPayment(clientSecret, {
+      payment_method: {
+        card: elements.getElement(CardElement),
       }
-    } catch (error) {
-      onPaymentError(error.message || 'Payment failed');
-    } finally {
-      setProcessing(false);
+    });
+    console.log('Payment result:', result);
+
+    if (result.error) {
+      onPaymentError(result.error.message);
+    } else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
+      // Payment succeeded, call success handler
+      onPaymentSuccess();
+      toast.success('Payment successful! You are now enrolled.');
+      onClose(); // Close the payment form
+   
+    } else {
+      onPaymentError('Payment was not successful. Please try again.');
     }
-  };
+  } catch (error) {
+    onPaymentError(error.response?.data?.message || error.message || 'Payment failed');
+  } finally {
+    setProcessing(false);
+  }
+};
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -91,6 +98,7 @@ const CourseHeader = ({ course, enrolled, enrolling, onEnroll, progressPercent, 
   const [enrolledStudents, setEnrolledStudents] = useState([]);
   const [error, setError] = useState(null);
   const [showPayment, setShowPayment] = useState(false);
+  const [enrollmentId, setEnrollmentId] = useState(null); // NEW: store enrollmentId
 
   useEffect(() => {
     if (!course) return;
@@ -112,9 +120,26 @@ const CourseHeader = ({ course, enrolled, enrolling, onEnroll, progressPercent, 
   const totalPremiumSections = course?.sections?.filter(s => s.isLocked && !s.isFree).length || 0;
   const coursePrice = course?.isFree ? 0 : course?.price || 0;
 
-  const handleEnrollClick = () => {
+  // NEW: handle paid enroll flow
+  const handleEnrollClick = async () => {
     if (coursePrice > 0) {
-      setShowPayment(true);
+      try {
+        const token = localStorage.getItem('token');
+        // Create enrollment and get enrollmentId
+        const { data } = await axios.post(
+          'http://localhost:5000/api/enroll/students',
+          { courseId: course._id },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (data.enrollment && data.enrollment._id) {
+          setEnrollmentId(data.enrollment._id);
+          setShowPayment(true);
+        } else {
+          toast.error('Failed to create enrollment.');
+        }
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Failed to create enrollment.');
+      }
     } else {
       onEnroll();
     }
@@ -165,10 +190,11 @@ const CourseHeader = ({ course, enrolled, enrolling, onEnroll, progressPercent, 
               showPayment ? (
                 <Elements stripe={stripePromise}>
                   <PaymentForm 
-                    enrollmentId={course._id} 
+                    enrollmentId={enrollmentId} // FIXED: use real enrollmentId
                     amount={coursePrice} 
                     onPaymentSuccess={handlePaymentSuccess} 
                     onPaymentError={handlePaymentError} 
+                    onClose={() => setShowPayment(false)}
                   />
                 </Elements>
               ) : (
@@ -774,6 +800,23 @@ const CourseView = () => {
    const [progress, setProgress] = useState({ completedLectures: [] });
   const [activeLectureId, setActiveLectureId] = useState(null);
 
+  // Add handlePaymentSuccess handler to update enrollment state and refresh course data
+  const handlePaymentSuccess = async () => {
+    try {
+      setEnrolled(true);
+      const token = localStorage.getItem('token');
+      const courseResponse = await axios.get(
+        `http://localhost:5000/api/students/courses/${courseId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setCourse(courseResponse.data);
+      toast.success('Payment successful! You are now enrolled.');
+    } catch (err) {
+      console.error('Error refreshing course after payment:', err);
+      toast.error('Failed to refresh course data after payment.');
+    }
+  };
+
 useEffect(() => {
   if (!course || !enrolled) return;
   const fetchProgress = async () => {
@@ -918,6 +961,7 @@ const handleUnlockSection = async (sectionId, price) => {
         enrolling={enrolling} 
         onEnroll={handleEnroll} 
         progressPercent={progressPercent}
+        onPaymentSuccess={handlePaymentSuccess} 
       />
       
       <div className="max-w-4xl mx-auto">

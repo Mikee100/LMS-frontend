@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { FiBookmark } from 'react-icons/fi';
 const CourseCard = ({ course, progressCount, isBookmarked, onBookmark = () => {} }) => {
   
+  console.log('Courses: ', course);
    const totalLectures = course.sections?.reduce(
     (sum, section) => sum + (section.lectures?.length || 0), 0
   ) || 0;
