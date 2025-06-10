@@ -1,3 +1,4 @@
+
 import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { 
@@ -10,12 +11,86 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast, { Toaster } from 'react-hot-toast';
 import CourseProgressBar from './CourseProgressBar';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
+const stripePromise = loadStripe('pk_test_51P1B7LCXIhVW50LesYpPi6AtOMCuxUu6vIOa9rXOiHshVmgIOR9MRTrS8QgvwOL1Q7W409Y0BwVkwZNwkOwGyKxt00htQVUS9I'); // Replace with your Stripe publishable key
+
+
+
+const PaymentForm = ({ enrollmentId, amount, onPaymentSuccess, onPaymentError, onClose }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [processing, setProcessing] = useState(false);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!stripe || !elements) return;
+
+    setProcessing(true);
+
+    try {
+      // Create payment intent on backend
+      const { data } = await axios.post('http://localhost:5000/api/payments/create-intent', {
+        enrollmentId,
+        amount,
+      });
+
+      const clientSecret = data.clientSecret;
+
+      // Confirm card payment
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement),
+        }
+      });
+
+      if (result.error) {
+        onPaymentError(result.error.message);
+      } else {
+        if (result.paymentIntent.status === 'succeeded') {
+          onPaymentSuccess();
+          onClose();
+        }
+      }
+    } catch (error) {
+      onPaymentError(error.message || 'Payment failed');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg relative">
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
+          aria-label="Close payment form"
+        >
+          &#x2715;
+        </button>
+        <h2 className="text-xl font-semibold mb-4">Complete Payment</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <CardElement options={{ hidePostalCode: true }} />
+          <button
+            type="submit"
+            disabled={!stripe || processing}
+            className="w-full py-2 px-4 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {processing ? 'Processing...' : `Pay $${amount.toFixed(2)}`}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 // Components
-const CourseHeader = ({ course, enrolled, enrolling, onEnroll, progressPercent }) => {
+const CourseHeader = ({ course, enrolled, enrolling, onEnroll, progressPercent, onPaymentSuccess }) => {
   const [enrolledStudents, setEnrolledStudents] = useState([]);
   const [error, setError] = useState(null);
+  const [showPayment, setShowPayment] = useState(false);
 
   useEffect(() => {
     if (!course) return;
@@ -36,6 +111,23 @@ const CourseHeader = ({ course, enrolled, enrolling, onEnroll, progressPercent }
 
   const totalPremiumSections = course?.sections?.filter(s => s.isLocked && !s.isFree).length || 0;
   const coursePrice = course?.isFree ? 0 : course?.price || 0;
+
+  const handleEnrollClick = () => {
+    if (coursePrice > 0) {
+      setShowPayment(true);
+    } else {
+      onEnroll();
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    setShowPayment(false);
+    onPaymentSuccess();
+  };
+
+  const handlePaymentError = (message) => {
+    toast.error(message);
+  };
 
   return (
     <div className="mb-8 relative rounded-xl overflow-hidden shadow-lg">
@@ -70,30 +162,41 @@ const CourseHeader = ({ course, enrolled, enrolling, onEnroll, progressPercent }
           </div>
           <div className="flex flex-col md:flex-row md:items-center gap-4">
             {!enrolled ? (
-              <button
-                onClick={onEnroll}
-                disabled={enrolling}
-                className={`px-8 py-3 rounded-lg text-white font-medium text-lg transition-all shadow-md hover:shadow-lg ${
-                  enrolling ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
-                }`}
-              >
-                {enrolling ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Enrolling...
-                  </span>
-                ) : coursePrice > 0 ? (
-                  <span className="flex items-center">
-                    <FiShoppingCart className="mr-2" />
-                    Enroll for ${coursePrice}
-                  </span>
-                ) : (
-                  'Enroll for Free'
-                )}
-              </button>
+              showPayment ? (
+                <Elements stripe={stripePromise}>
+                  <PaymentForm 
+                    enrollmentId={course._id} 
+                    amount={coursePrice} 
+                    onPaymentSuccess={handlePaymentSuccess} 
+                    onPaymentError={handlePaymentError} 
+                  />
+                </Elements>
+              ) : (
+                <button
+                  onClick={handleEnrollClick}
+                  disabled={enrolling}
+                  className={`px-8 py-3 rounded-lg text-white font-medium text-lg transition-all shadow-md hover:shadow-lg ${
+                    enrolling ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
+                  }`}
+                >
+                  {enrolling ? (
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Enrolling...
+                    </span>
+                  ) : coursePrice > 0 ? (
+                    <span className="flex items-center">
+                      <FiShoppingCart className="mr-2" />
+                      Enroll for ${coursePrice}
+                    </span>
+                  ) : (
+                    'Enroll for Free'
+                  )}
+                </button>
+              )
             ) : (
               <div className="flex items-center text-green-200 font-medium text-lg">
                 <FiCheckCircle className="mr-2" size={24} />
