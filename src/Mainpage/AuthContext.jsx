@@ -12,7 +12,7 @@ export const AuthProvider = ({ children }) => {
       if (!token) return;
 
       try {
-        const response = await fetch('http://localhost:5000/api/auth/verifyToken', {
+        const response = await fetch('https://lms-backend-4b82.onrender.com/api/auth/verifyToken', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

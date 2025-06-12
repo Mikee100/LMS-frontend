@@ -24,7 +24,7 @@ export default function StudentNotificationCenter() {
     const fetchNotifications = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/notifications', {
+        const res = await axios.get('https://lms-backend-4b82.onrender.com/api/notifications', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setNotifications(res.data);
@@ -40,7 +40,7 @@ export default function StudentNotificationCenter() {
   const markAsRead = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`http://localhost:5000/api/notifications/${id}/read`, null, {
+      await axios.patch(`https://lms-backend-4b82.onrender.com/api/notifications/${id}/read`, null, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNotifications(notifications.map(n =>
@@ -54,7 +54,7 @@ export default function StudentNotificationCenter() {
   const markAllAsRead = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch('http://localhost:5000/api/notifications/mark-all-read', null, {
+      await axios.patch('https://lms-backend-4b82.onrender.com/api/notifications/mark-all-read', null, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNotifications(notifications.map(n => ({ ...n, read: true })));
@@ -70,7 +70,7 @@ export default function StudentNotificationCenter() {
     try {
       const token = localStorage.getItem('token');
       // Send as a direct message to the tutor
-      await axios.post('http://localhost:5000/api/messages/student/send/direct', {
+      await axios.post('https://lms-backend-4b82.onrender.com/api/messages/student/send/direct', {
         tutorId: notification.sender, // tutor's id
         content: replyContent
       }, {

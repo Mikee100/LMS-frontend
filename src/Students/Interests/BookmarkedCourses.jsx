@@ -13,7 +13,7 @@ const BookmarkedCoursesPage = () => {
     // Fetch courses from your API
     const fetchCourses = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/courses');
+        const res = await fetch('https://lms-backend-4b82.onrender.com/api/courses');
         const data = await res.json();
         setAvailableCourses(data);
       } catch (err) {

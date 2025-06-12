@@ -9,7 +9,7 @@ const PersonalizedRecommendations = ({ availableCourses, courseProgress }) => {
     const fetchStudentProfile = async () => {
       const token = localStorage.getItem('token');
       try {
-        const res = await axios.get('http://localhost:5000/api/students/me', {
+        const res = await axios.get('https://lms-backend-4b82.onrender.com/api/students/me', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setStudentInterests(res.data.interests || []);

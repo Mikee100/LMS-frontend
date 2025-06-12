@@ -17,7 +17,7 @@ const StudentNavBar = () => {
     const fetchUnread = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5000/api/notifications', {
+        const res = await fetch('https://lms-backend-4b82.onrender.com/api/notifications', {
           headers: { Authorization: `Bearer ${token}` }
         });
         const notifications = await res.json();

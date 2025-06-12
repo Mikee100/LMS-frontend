@@ -14,7 +14,7 @@ const CourseList = () => {
     const fetchCourses = async () => {
       const token = localStorage.getItem('token');
       try {
-        const response = await axios.get('http://localhost:5000/api/courses/my/courses', {
+        const response = await axios.get('https://lms-backend-4b82.onrender.com/api/courses/my/courses', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -55,7 +55,7 @@ const CourseList = () => {
     if (window.confirm('Are you sure you want to delete this course?')) {
       try {
         const token = localStorage.getItem('token');
-        await axios.delete(`http://localhost:5000/api/courses/${courseId}`, {
+        await axios.delete(`https://lms-backend-4b82.onrender.com/api/courses/${courseId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

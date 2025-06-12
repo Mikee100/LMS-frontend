@@ -21,7 +21,7 @@ const [errorSent, setErrorSent] = useState(null);
     const fetchCourses = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:5000/api/courses/my/courses', {
+        const response = await axios.get('https://lms-backend-4b82.onrender.com/api/courses/my/courses', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setCourses(response.data);
@@ -41,7 +41,7 @@ const [errorSent, setErrorSent] = useState(null);
       try {
         const token = localStorage.getItem('token');
         const response = await axios.get(
-          `http://localhost:5000/api/courses/${selectedCourse}/enrollments`,
+          `https://lms-backend-4b82.onrender.com/api/courses/${selectedCourse}/enrollments`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setEnrolledStudents(response.data);
@@ -61,7 +61,7 @@ useEffect(() => {
     try {
       setLoadingSent(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/notifications/sent', {
+      const response = await axios.get('https://lms-backend-4b82.onrender.com/api/notifications/sent', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSentMessages(response.data);
@@ -94,7 +94,7 @@ useEffect(() => {
     await Promise.all(
       enrolledStudents.map(student =>
         axios.post(
-          'http://localhost:5000/api/notifications/send',
+          'https://lms-backend-4b82.onrender.com/api/notifications/send',
           {
             user: student._id,            // recipient
             sender: tutorId,              // sender (tutor)

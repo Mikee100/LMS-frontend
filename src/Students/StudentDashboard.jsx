@@ -59,7 +59,7 @@ const toggleBookmark = (courseId) => {
   const fetchActivity = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await axios.get('http://localhost:5000/api/activity/recent', {
+      const res = await axios.get('https://lms-backend-4b82.onrender.com/api/activity/recent', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setRecentActivity(res.data);
@@ -77,7 +77,7 @@ const toggleBookmark = (courseId) => {
     await Promise.all(
       availableCourses.map(async (course) => {
         try {
-          const res = await axios.get(`http://localhost:5000/api/progress/${course._id}`, {
+          const res = await axios.get(`https://lms-backend-4b82.onrender.com/api/progress/${course._id}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           progressMap[course._id] = res.data?.completedLectures?.length || 0;
@@ -139,7 +139,7 @@ const toggleBookmark = (courseId) => {
     const fetchCourses = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:5000/api/students/courses', {
+        const response = await axios.get('https://lms-backend-4b82.onrender.com/api/students/courses', {
           headers: {
             Authorization: `Bearer ${token}`
           }

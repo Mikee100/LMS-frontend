@@ -24,7 +24,7 @@ const LectureItem = ({
     const fetchAssignments = async () => {
       if (!courseId || !sectionId || !lecture.id) return;
       try {
-        const res = await axios.get('http://localhost:5000/api/assignments', {
+        const res = await axios.get('https://lms-backend-4b82.onrender.com/api/assignments', {
           params: {
             courseId,
             sectionId,
@@ -56,7 +56,7 @@ const LectureItem = ({
     }
     try {
       await axios.post(
-        'http://localhost:5000/api/assignments/generate',
+        'https://lms-backend-4b82.onrender.com/api/assignments/generate',
         {
           materialFilename: pdfMaterial.filename,
           sectionId: sectionId,
@@ -69,7 +69,7 @@ const LectureItem = ({
       );
       toast.success('Assignment generated from lecture PDF!');
       // Refresh assignments after generation
-      const res = await axios.get('http://localhost:5000/api/assignments', {
+      const res = await axios.get('https://lms-backend-4b82.onrender.com/api/assignments', {
         params: {
           courseId,
           sectionId,

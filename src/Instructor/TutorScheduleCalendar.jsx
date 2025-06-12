@@ -25,7 +25,7 @@ function TutorSchedulePage() {
   const fetchCourses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/courses/my/courses', {
+      const res = await fetch('https://lms-backend-4b82.onrender.com/api/courses/my/courses', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -39,7 +39,7 @@ function TutorSchedulePage() {
 
   const fetchSchedule = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/schedule', {
+      const res = await fetch('https://lms-backend-4b82.onrender.com/api/schedule', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -75,7 +75,7 @@ function TutorSchedulePage() {
   const handleSubmit = async e => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:5000/api/schedule', {
+      const res = await fetch('https://lms-backend-4b82.onrender.com/api/schedule', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -103,7 +103,7 @@ function TutorSchedulePage() {
 
   const handleDeleteEvent = async (eventId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/schedule/${eventId}`, {
+      const res = await fetch(`https://lms-backend-4b82.onrender.com/api/schedule/${eventId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
