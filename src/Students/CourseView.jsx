@@ -4,12 +4,14 @@ import {
   FiFile, FiEye, FiDownload, FiCheckCircle, 
   FiAlertCircle, FiChevronRight, FiChevronDown,
   FiPlay, FiClock, FiBookOpen, FiLock, FiUnlock,
-  FiDollarSign, FiShoppingCart, FiStar
+  FiDollarSign, FiShoppingCart, FiStar, FiArrowLeft
 } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast, { Toaster } from 'react-hot-toast';
 import CourseProgressBar from './CourseProgressBar';
+import Footer from './Footer';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
@@ -34,7 +36,7 @@ const handleSubmit = async (event) => {
     // Create payment intent on backend
     const token = localStorage.getItem('token');
     const { data } = await axios.post(
-      'https://lms-backend-4b82.onrender.com/api/payments/create-intent',
+      'http://localhost:5000/api/payments/create-intent',
       { enrollmentId, amount },
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -95,6 +97,7 @@ const handleSubmit = async (event) => {
 
 // Components
 const CourseHeader = ({ course, enrolled, enrolling, onEnroll, progressPercent, onPaymentSuccess }) => {
+  const navigate = useNavigate();
   const [enrolledStudents, setEnrolledStudents] = useState([]);
   const [error, setError] = useState(null);
   const [showPayment, setShowPayment] = useState(false);
@@ -106,7 +109,7 @@ const CourseHeader = ({ course, enrolled, enrolling, onEnroll, progressPercent, 
       try {
         const token = localStorage.getItem('token');
         const response = await axios.get(
-          `https://lms-backend-4b82.onrender.com/api/courses/${course._id}/enrollments`,
+          `http://localhost:5000/api/courses/${course._id}/enrollments`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setEnrolledStudents(response.data);
@@ -127,7 +130,7 @@ const CourseHeader = ({ course, enrolled, enrolling, onEnroll, progressPercent, 
         const token = localStorage.getItem('token');
         // Create enrollment and get enrollmentId
         const { data } = await axios.post(
-          'https://lms-backend-4b82.onrender.com/api/enroll/students',
+          'http://localhost:5000/api/enroll/students',
           { courseId: course._id },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -172,6 +175,14 @@ const CourseHeader = ({ course, enrolled, enrolling, onEnroll, progressPercent, 
           transition={{ duration: 0.7 }}
           className="absolute inset-0 flex flex-col justify-end p-6 md:p-10"
         >
+          <button
+            onClick={() => navigate(-1)}
+            className="absolute top-4 left-4 flex items-center space-x-2 bg-indigo-700 bg-opacity-70 hover:bg-opacity-90 text-white rounded-full px-3 py-1 shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            aria-label="Go back"
+          >
+            <FiArrowLeft size={20} />
+            <span className="text-sm font-semibold">Back</span>
+          </button>
           <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow mb-2">{course.title}</h1>
           <div className="flex flex-wrap items-center gap-3 text-indigo-100 mb-3">
             <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide ${
@@ -542,7 +553,7 @@ const MaterialItem = ({ material }) => {
   const fileUrl = material.link
     ? material.link
     : material.path
-      ? `https://lms-backend-4b82.onrender.com/${material.path.replace(/\\/g, '/')}`
+      ? `http://localhost:5000/${material.path.replace(/\\/g, '/')}`
       : '#';
 
   return (
@@ -806,7 +817,7 @@ const CourseView = () => {
       setEnrolled(true);
       const token = localStorage.getItem('token');
       const courseResponse = await axios.get(
-        `https://lms-backend-4b82.onrender.com/api/students/courses/${courseId}`,
+        `http://localhost:5000/api/students/courses/${courseId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setCourse(courseResponse.data);
@@ -821,7 +832,7 @@ useEffect(() => {
   if (!course || !enrolled) return;
   const fetchProgress = async () => {
     const token = localStorage.getItem('token');
-    const res = await axios.get(`https://lms-backend-4b82.onrender.com/api/progress/${course._id}`, {
+    const res = await axios.get(`http://localhost:5000/api/progress/${course._id}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     setProgress(res.data || { completedLectures: [] });
@@ -849,10 +860,10 @@ const progressPercent = totalLectures > 0
         const token = localStorage.getItem('token');
         
         const [courseResponse, enrollmentResponse] = await Promise.all([
-          axios.get(`https://lms-backend-4b82.onrender.com/api/students/courses/${courseId}`, {
+          axios.get(`http://localhost:5000/api/students/courses/${courseId}`, {
             headers: { Authorization: `Bearer ${token}` }
           }),
-          axios.get(`https://lms-backend-4b82.onrender.com/api/enroll/students/status/${courseId}`, {
+          axios.get(`http://localhost:5000/api/enroll/students/status/${courseId}`, {
             headers: { Authorization: `Bearer ${token}` }
           })
         ]);
@@ -879,7 +890,7 @@ const handleEnroll = async () => {
     const token = localStorage.getItem('token');
 
     const response = await axios.post(
-      `https://lms-backend-4b82.onrender.com/api/enroll/students`,
+      `http://localhost:5000/api/enroll/students`,
       { courseId },
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -888,7 +899,7 @@ const handleEnroll = async () => {
       setEnrolled(true);
       // Refresh course data
       const courseResponse = await axios.get(
-        `https://lms-backend-4b82.onrender.com/api/students/courses/${courseId}`,
+        `http://localhost:5000/api/students/courses/${courseId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setCourse(courseResponse.data);
@@ -910,7 +921,7 @@ const handleUnlockSection = async (sectionId, price) => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     setEnrolled(true);
     const courseResponse = await axios.get(
-      `https://lms-backend-4b82.onrender.com/api/students/courses/${courseId}`,
+      `http://localhost:5000/api/students/courses/${courseId}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     setCourse(courseResponse.data);
@@ -975,14 +986,14 @@ const handleUnlockSection = async (sectionId, price) => {
   completedLectures={progress.completedLectures}
  markLectureComplete={async (lectureId) => {
     const token = localStorage.getItem('token');
-    await axios.post('https://lms-backend-4b82.onrender.com/api/progress/complete', {
+    await axios.post('http://localhost:5000/api/progress/complete', {
       courseId: course._id,
       lectureId
     }, {
       headers: { Authorization: `Bearer ${token}` }
     });
     // Refetch progress
-    const res = await axios.get(`https://lms-backend-4b82.onrender.com/api/progress/${course._id}`, {
+    const res = await axios.get(`http://localhost:5000/api/progress/${course._id}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     setProgress(res.data || { completedLectures: [] });
@@ -997,7 +1008,9 @@ const handleUnlockSection = async (sectionId, price) => {
           <InstructorSection instructor={course.tutor} />
         )}
       </div>
-    </div>
+     </div>
+
+      <Footer />
 
      </>
   );

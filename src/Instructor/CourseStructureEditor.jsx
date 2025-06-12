@@ -109,7 +109,7 @@ section.materials.forEach((mat, idx) => {
 
 useEffect(() => {
   const fetchAssignments = async () => {
-    const res = await axios.get('https://lms-backend-4b82.onrender.com/api/assignments', {
+    const res = await axios.get('http://localhost:5000/api/assignments', {
       params: { courseId: id }
     });
     setAssignments(res.data);
@@ -122,7 +122,7 @@ useEffect(() => {
   const fetchCourseDetails = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`https://lms-backend-4b82.onrender.com/api/students/courses/${id}`, {
+      const response = await axios.get(`http://localhost:5000/api/students/courses/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -131,7 +131,7 @@ useEffect(() => {
       let courseData = response.data;
      // Set preview image if thumbnail path exists
 if (courseData.thumbnail?.path) {
-  setPreviewImage(`https://lms-backend-4b82.onrender.com/${courseData.thumbnail.path.replace(/\\/g, '/')}`);
+  setPreviewImage(`http://localhost:5000/${courseData.thumbnail.path.replace(/\\/g, '/')}`);
 }
 
       courseData.sections = (courseData.sections || []).map(section => ({
@@ -403,7 +403,7 @@ const handleMaterialsChange = (sectionIndex, lectureIndex, e) => {
 
 const viewMaterial = (material) => {
   const token = localStorage.getItem('token');
-  const fileUrl = `https://lms-backend-4b82.onrender.com/api/courses/material/${material.filename}?token=${token}`;
+  const fileUrl = `http://localhost:5000/api/courses/material/${material.filename}?token=${token}`;
 
   const isPDF = (material.originalName || material.filename)?.endsWith('.pdf');
 
@@ -474,7 +474,7 @@ for (let sectionIndex = 0; sectionIndex < course.sections.length; sectionIndex++
 }
       const token = localStorage.getItem('token');
 
-      await axios.put(`https://lms-backend-4b82.onrender.com/api/courses/${id}/structured`, formData, {
+      await axios.put(`http://localhost:5000/api/courses/${id}/structured`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`
@@ -618,7 +618,7 @@ return (
   />
 ) : course.thumbnail?.path ? (
   <img
-    src={`https://lms-backend-4b82.onrender.com/${course.thumbnail.path.replace(/\\/g, '/')}`}
+    src={`http://localhost:5000/${course.thumbnail.path.replace(/\\/g, '/')}`}
     alt="Course thumbnail"
     className="h-32 w-32 rounded-lg object-cover border"
   />
@@ -866,7 +866,7 @@ return (
   try {
     const token = localStorage.getItem('token');
     const res = await axios.post(
-      'https://lms-backend-4b82.onrender.com/api/assignments/generate',
+      'http://localhost:5000/api/assignments/generate',
       {
         materialFilename: pdfMaterial.filename,
         sectionId: section.id,

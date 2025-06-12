@@ -23,7 +23,7 @@ const ScheduleCalendar = () => {
       try {
        
        // In ScheduleCalendar.js, update the fetch call:
-const response = await axios.get('https://lms-backend-4b82.onrender.com/api/schedule/student', {
+const response = await axios.get('http://localhost:5000/api/schedule/student', {
   headers: {
     Authorization: `Bearer ${token}`
   }

@@ -34,7 +34,7 @@ const downloadMaterial = async (materialId, filename) => {
   try {
     const token = localStorage.getItem('token');
     const response = await axios.get(
-      `https://lms-backend-4b82.onrender.com/api/courses/material/${materialId}`,
+      `http://localhost:5000/api/courses/material/${materialId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -59,7 +59,7 @@ const downloadMaterial = async (materialId, filename) => {
 
 const viewMaterial = (material) => {
   const token = localStorage.getItem('token');
-  const fileUrl = `https://lms-backend-4b82.onrender.com/api/courses/material/${material.filename}?token=${token}`;
+  const fileUrl = `http://localhost:5000/api/courses/material/${material.filename}?token=${token}`;
 
   if ((material.originalName || material.filename)?.endsWith('.pdf')) {
     window.open(fileUrl, '_blank');
@@ -81,7 +81,7 @@ const viewMaterial = (material) => {
     const fetchCourseDetails = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`https://lms-backend-4b82.onrender.com/api/students/courses/${id}`, {
+        const response = await axios.get(`http://localhost:5000/api/students/courses/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -153,7 +153,7 @@ const viewMaterial = (material) => {
 
       const token = localStorage.getItem('token');
 
-      await axios.put(`https://lms-backend-4b82.onrender.com/api/courses/${id}`, formData, {
+      await axios.put(`http://localhost:5000/api/courses/${id}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`

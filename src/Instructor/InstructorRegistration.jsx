@@ -163,7 +163,7 @@ export default function InstructorRegistration() {
   };
 
   // Add this to your tutor registration component
-  const API_BASE_URL = 'https://lms-backend-4b82.onrender.com'; // Your Express server URL
+  const API_BASE_URL = 'http://localhost:5000'; // Your Express server URL
 
   const handleSubmit = async (e) => {
     e.preventDefault();

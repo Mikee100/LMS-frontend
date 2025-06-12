@@ -26,7 +26,7 @@ const CourseCard = ({ course, progressCount, isBookmarked, onBookmark = () => {}
   <img
     src={
       course.thumbnail?.path
-        ? `https://lms-backend-4b82.onrender.com/${course.thumbnail.path.replace(/\\/g, '/')}`
+        ? `http://localhost:5000/${course.thumbnail.path.replace(/\\/g, '/')}`
         : 'https://source.unsplash.com/random/600x400/?education,learning'
     }
     alt={course.title}

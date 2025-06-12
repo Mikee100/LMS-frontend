@@ -17,7 +17,7 @@ const TutorPayments = () => {
         setLoading(true);
         setError(null);
         const token = localStorage.getItem('token');
-        const response = await axios.get('https://lms-backend-4b82.onrender.com/api/payments/tutor-payments', {
+        const response = await axios.get('http://localhost:5000/api/payments/tutor-payments', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setPayments(response.data);

@@ -12,7 +12,7 @@ const NotificationDropdown = () => {
     const fetchNotifications = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('https://lms-backend-4b82.onrender.com/api/notifications', {
+        const response = await axios.get('http://localhost:5000/api/notifications', {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -32,7 +32,7 @@ const NotificationDropdown = () => {
   const markAsRead = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`https://lms-backend-4b82.onrender.com/api/notifications/${id}/read`, null, {
+      await axios.patch(`http://localhost:5000/api/notifications/${id}/read`, null, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -48,7 +48,7 @@ const NotificationDropdown = () => {
   const markAllAsRead = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch('https://lms-backend-4b82.onrender.com/api/notifications/mark-all-read', null, {
+      await axios.patch('http://localhost:5000/api/notifications/mark-all-read', null, {
         headers: {
           Authorization: `Bearer ${token}`
         }

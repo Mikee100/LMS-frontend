@@ -29,10 +29,10 @@ export default function TutorMessagingCenter() {
     const fetchData = async () => {
       try {
         const [studentsRes, coursesRes] = await Promise.all([
-          axios.get('https://lms-backend-4b82.onrender.com/api/tutors/all/students', {
+          axios.get('http://localhost:5000/api/tutors/all/students', {
             headers: { Authorization: `Bearer ${token}` }
           }),
-          axios.get('https://lms-backend-4b82.onrender.com/api/courses/my/courses', {
+          axios.get('http://localhost:5000/api/courses/my/courses', {
             headers: { Authorization: `Bearer ${token}` }
           })
         ]);
@@ -54,7 +54,7 @@ export default function TutorMessagingCenter() {
       group: 'group'
     };
     const messageType = typeMap[activeTab] || activeTab;
-    const baseUrl = 'https://lms-backend-4b82.onrender.com/api/messages/inbox';
+    const baseUrl = 'http://localhost:5000/api/messages/inbox';
     const url = `${baseUrl}?type=${messageType}`;
 
       setLoading(true);
@@ -83,7 +83,7 @@ export default function TutorMessagingCenter() {
       if (activeTab === 'announcements') endpoint = 'announcement';
       else if (activeTab === 'group') endpoint = 'group';
 
-      await axios.post(`https://lms-backend-4b82.onrender.com/api/messages/send/${endpoint}`, {
+      await axios.post(`http://localhost:5000/api/messages/send/${endpoint}`, {
         recipients: selectedRecipients,
         content: messageContent,
         ...(activeTab === 'announcements' && { course: selectedCourse })

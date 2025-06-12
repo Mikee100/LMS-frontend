@@ -27,7 +27,7 @@ export default function TutorDashboard() {
           return;
         }
 
-        const response = await fetch("https://lms-backend-4b82.onrender.com/api/tutors/dashboard", {
+        const response = await fetch("http://localhost:5000/api/tutors/dashboard", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

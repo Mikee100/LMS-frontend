@@ -10,7 +10,7 @@ export default function ChatBox({ tutorId, tutorName }) {
   useEffect(() => {
     const fetchMessages = async () => {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`https://lms-backend-4b82.onrender.com/api/messages/conversation/${tutorId}`, {
+      const res = await axios.get(`http://localhost:5000/api/messages/conversation/${tutorId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessages(res.data);
@@ -27,7 +27,7 @@ export default function ChatBox({ tutorId, tutorName }) {
     if (!input.trim()) return;
     setSending(true);
     const token = localStorage.getItem('token');
-    await axios.post('https://lms-backend-4b82.onrender.com/api/messages/student/send/direct', {
+    await axios.post('http://localhost:5000/api/messages/student/send/direct', {
       tutorId,
       content: input
     }, {
@@ -35,7 +35,7 @@ export default function ChatBox({ tutorId, tutorName }) {
     });
     setInput('');
     // Refetch messages after sending
-    const res = await axios.get(`https://lms-backend-4b82.onrender.com/api/messages/conversation/${tutorId}`, {
+    const res = await axios.get(`http://localhost:5000/api/messages/conversation/${tutorId}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     setMessages(res.data);

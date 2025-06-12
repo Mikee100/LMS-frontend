@@ -77,7 +77,7 @@ formData.materials.forEach((material) => {
   });
       
 
-      const response = await fetch('https://lms-backend-4b82.onrender.com/api/courses', {
+      const response = await fetch('http://localhost:5000/api/courses', {
         method: 'POST',
         body: formPayload,
         headers: {

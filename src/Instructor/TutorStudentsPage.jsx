@@ -17,7 +17,7 @@ export default function TutorStudentsPage() {
     const fetchStudents = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('https://lms-backend-4b82.onrender.com/api/tutors/all/students', {
+        const res = await fetch('http://localhost:5000/api/tutors/all/students', {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (!res.ok) throw new Error('Failed to fetch students');

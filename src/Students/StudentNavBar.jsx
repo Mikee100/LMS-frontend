@@ -17,7 +17,7 @@ const StudentNavBar = () => {
     const fetchUnread = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('https://lms-backend-4b82.onrender.com/api/notifications', {
+        const res = await fetch('http://localhost:5000/api/notifications', {
           headers: { Authorization: `Bearer ${token}` }
         });
         const notifications = await res.json();
@@ -49,6 +49,9 @@ useEffect(() => {
     navigate('/login');
   };
 
+  const handleStudentProfile = () => {
+    navigate('/studentprofile');
+  };
   return (
     <div className="relative">
       {/* Top Navbar */}
@@ -141,7 +144,7 @@ useEffect(() => {
                 </li>
                 <li 
                   className="flex items-center gap-3 p-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md cursor-pointer transition-colors"
-                  onClick={() => setMenuOpen(false)}
+                  onClick={handleStudentProfile}
                 >
                   <User size={20} className="flex-shrink-0" /> 
                   <span>Profile</span>
