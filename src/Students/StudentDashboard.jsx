@@ -29,6 +29,8 @@ const StudentDashboard = () => {
 const [courseProgress, setCourseProgress] = useState({});
 const [recentActivity, setRecentActivity] = useState([]);
 
+const [student, setStudent] = useState(null);
+
 
 
 
@@ -37,6 +39,38 @@ const [bookmarkedCourses, setBookmarkedCourses] = useState(() => {
   return saved ? JSON.parse(saved) : [];
 });
 
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        const { data } = await axios.get('http://localhost:5000/api/students/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setProfile(data);
+        setForm({
+          firstName: data.user?.firstName || '',
+          lastName: data.user?.lastName || '',
+          email: data.user?.email || '',
+          dateOfBirth: data.user?.dateOfBirth ? new Date(data.user.dateOfBirth).toISOString().split('T')[0] : '',
+          studentId: data.user?.studentId || '',
+          interests: data.user.interests || data.user?.interests || [],
+          bio: data.user.bio || '',
+          avatar: data.user.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(data.user?.firstName + ' ' + data.user?.lastName) + '&background=random',
+          socialLinks: data.user.socialLinks || {},
+          contact: data.contact || {}
+        });
+      } catch (err) {
+        toast.error('Failed to load profile');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+console.log("student details: ",student)
 
 const toggleBookmark = (courseId) => {
   setBookmarkedCourses(prev => {
@@ -268,7 +302,7 @@ const getNextLecture = (course, completedLectures = []) => {
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
       {/* Modern Navbar */}
-      <StudentNavBar />
+      <StudentNavBar student={student} />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

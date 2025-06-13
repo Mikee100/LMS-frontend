@@ -4,7 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiBell, FiBookmark } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom'; // <-- Add this import
 
-const StudentNavBar = () => {
+const StudentNavBar = ({student}) => {
+
+  console.log("StudentNavBar component rendered with student:", student);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -99,6 +101,26 @@ useEffect(() => {
     >
       <LogOut className="text-blue-600 text-xl" />
     </button>
+    <div
+          className="ml-4 cursor-pointer"
+          onClick={() => navigate("/studentprofile")}
+          title="View Profile"
+        >
+          <div
+            className="w-10 h-10 rounded-full overflow-hidden border-2 border-indigo-500 flex items-center justify-center bg-gray-100"
+          >
+            <img
+              src={
+                student?.avatar ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  (student?.firstName || "") + " " + (student?.lastName || "")
+                )}&background=random`
+              }
+              alt="Avatar"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
   </div>
 </nav>
 
