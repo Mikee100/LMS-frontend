@@ -16,6 +16,8 @@ import { useNavigate } from 'react-router-dom';
 import PersonalizedRecommendations from './Interests/PersonalizedRecommendations';
 import { FiBook, FiCalendar, FiClock, FiAward, FiSearch, FiFilter, FiChevronRight } from 'react-icons/fi';
 import Footer from './Footer';
+import ProfileCompletionBanner from './ProfileCompletionBanner';
+import UpcomingAssignments from './UpcomingAssignments';
 
 const StudentDashboard = () => {
   const [availableCourses, setAvailableCourses] = useState([]);
@@ -29,7 +31,20 @@ const StudentDashboard = () => {
 const [courseProgress, setCourseProgress] = useState({});
 const [recentActivity, setRecentActivity] = useState([]);
 
-const [student, setStudent] = useState(null);
+  const [student, setStudent] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [form, setForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    dateOfBirth: '',
+    studentId: '',
+    interests: [],
+    bio: '',
+    avatar: '',
+    socialLinks: {},
+    contact: {}
+  });
 
 
 
@@ -69,6 +84,7 @@ const [bookmarkedCourses, setBookmarkedCourses] = useState(() => {
     };
     fetchProfile();
   }, []);
+
 
 console.log("student details: ",student)
 
@@ -180,18 +196,8 @@ const toggleBookmark = (courseId) => {
           }
         });
         
-        // Add mock data for demonstration
-        const coursesWithMockData = response.data.map(course => ({
-          ...course,
-          isNew: Math.random() > 0.7,
-          duration: `${Math.floor(Math.random() * 6) + 2} weeks`,
-          price: Math.random() > 0.3 ? Math.floor(Math.random() * 200) + 20 : 0,
-          rating: (Math.random() * 2 + 3).toFixed(1),
-          students: Math.floor(Math.random() * 500)
-        }));
-        
-        setAvailableCourses(coursesWithMockData);
-        setFilteredCourses(coursesWithMockData);
+        setAvailableCourses(response.data);
+        setFilteredCourses(response.data);
       } catch (err) {
         console.error('Failed to fetch courses', err);
         setError('Failed to load courses. Please try again later.');
@@ -304,14 +310,18 @@ const getNextLecture = (course, completedLectures = []) => {
       {/* Modern Navbar */}
       <StudentNavBar student={student} />
 
+      <ProfileCompletionBanner profile={profile} />
+
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+    
         {/* Welcome Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Welcome back, <span className="text-indigo-600">Student!</span></h1>
           <p className="text-gray-500 mt-2">Keep up the great work! You’ve completed <span className="font-semibold text-indigo-600">12 lectures</span> this week.</p>
         </div>
+            <UpcomingAssignments />
+        
 
         {/* Dashboard Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -412,7 +422,7 @@ const getNextLecture = (course, completedLectures = []) => {
               courseProgress={courseProgress} 
             />
 
-            {/* Continue Learning Section */}
+            {/* Continue Learning Section */}            
             {startedCourses.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                 <div className="flex items-center justify-between mb-6">
@@ -529,8 +539,6 @@ const getNextLecture = (course, completedLectures = []) => {
        <Footer />
 
     </div>
-
-   
   );
 };
 

@@ -23,78 +23,145 @@ const PaymentForm = ({ enrollmentId, amount, onPaymentSuccess, onPaymentError, o
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState(null);
 
-  console.log('PaymentForm mounted with enrollmentId:', enrollmentId, 'and amount:', amount);
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!stripe || !elements) return;
 
-const handleSubmit = async (event) => {
-  event.preventDefault();
-  if (!stripe || !elements) return;
+    setProcessing(true);
+    setPaymentError(null);
 
-  setProcessing(true);
+    try {
+      const token = localStorage.getItem('token');
+      const { data } = await axios.post(
+        'http://localhost:5000/api/payments/create-intent',
+        { enrollmentId, amount },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-  try {
-    // Create payment intent on backend
-    const token = localStorage.getItem('token');
-    const { data } = await axios.post(
-      'http://localhost:5000/api/payments/create-intent',
-      { enrollmentId, amount },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+      const clientSecret = data.clientSecret;
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement),
+          billing_details: {
+            name: "Customer Name"
+          }
+        }
+      });
 
-    const clientSecret = data.clientSecret;
-
-    // Confirm card payment
-    const result = await stripe.confirmCardPayment(clientSecret, {
-      payment_method: {
-        card: elements.getElement(CardElement),
+      if (result.error) {
+        throw new Error(result.error.message);
+      } else if (result.paymentIntent?.status === 'succeeded') {
+        onPaymentSuccess();
+        toast.success('Payment successful! You are now enrolled.');
+        onClose();
+      } else {
+        throw new Error('Payment was not successful. Please try again.');
       }
-    });
-    console.log('Payment result:', result);
-
-    if (result.error) {
-      onPaymentError(result.error.message);
-    } else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
-      // Payment succeeded, call success handler
-      onPaymentSuccess();
-      toast.success('Payment successful! You are now enrolled.');
-      onClose(); // Close the payment form
-   
-    } else {
-      onPaymentError('Payment was not successful. Please try again.');
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message || 'Payment failed';
+      setPaymentError(errorMessage);
+      onPaymentError(errorMessage);
+    } finally {
+      setProcessing(false);
     }
-  } catch (error) {
-    onPaymentError(error.response?.data?.message || error.message || 'Payment failed');
-  } finally {
-    setProcessing(false);
-  }
-};
+  };
+
+  const cardElementOptions = {
+    style: {
+      base: {
+        fontSize: '16px',
+        color: '#424770',
+        '::placeholder': {
+          color: '#aab7c4',
+        },
+        padding: '10px 12px',
+      },
+      invalid: {
+        color: '#9e2146',
+      },
+    },
+    hidePostalCode: true
+  };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg relative">
+    <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div 
+        className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl relative border border-gray-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           onClick={onClose}
-          className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors p-1 rounded-full hover:bg-gray-100"
           aria-label="Close payment form"
+          disabled={processing}
         >
-          &#x2715;
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
         </button>
-        <h2 className="text-xl font-semibold mb-4">Complete Payment</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <CardElement options={{ hidePostalCode: true }} />
+        
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">Complete Payment</h2>
+          <p className="text-gray-600 mt-1">Secure payment processed by Stripe</p>
+        </div>
+
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-100">
+          <div className="flex justify-between items-center">
+            <span className="font-medium text-gray-700">Total Amount:</span>
+            <span className="text-2xl font-bold text-indigo-600">${amount.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Card Details</label>
+            <div className="border border-gray-200 rounded-lg p-3 hover:border-indigo-400 transition-colors bg-white">
+              <CardElement options={cardElementOptions} />
+            </div>
+          </div>
+
+          {paymentError && (
+            <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm flex items-start border border-red-100">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span>{paymentError}</span>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={!stripe || processing}
-            className="w-full py-2 px-4 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+            className={`w-full py-3 px-4 rounded-lg font-medium flex items-center justify-center transition-colors ${
+              processing ? 'bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700'
+            } text-white disabled:opacity-70 disabled:cursor-not-allowed shadow-sm`}
           >
-            {processing ? 'Processing...' : `Pay $${amount.toFixed(2)}`}
+            {processing ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing Payment...
+              </>
+            ) : (
+              `Pay $${amount.toFixed(2)}`
+            )}
           </button>
+
+          <div className="flex items-center justify-center mt-2 space-x-1">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+            </svg>
+            <span className="text-xs text-gray-500">Payments are secure and encrypted</span>
+          </div>
         </form>
       </div>
     </div>
   );
 };
-
 // Components
 const CourseHeader = ({ course, enrolled, enrolling, onEnroll, progressPercent, onPaymentSuccess }) => {
   const navigate = useNavigate();
@@ -121,7 +188,22 @@ const CourseHeader = ({ course, enrolled, enrolling, onEnroll, progressPercent, 
   }, [course?._id]);
 
   const totalPremiumSections = course?.sections?.filter(s => s.isLocked && !s.isFree).length || 0;
-  const coursePrice = course?.isFree ? 0 : course?.price || 0;
+  
+  // Fix: parse price correctly if it's an object with $numberInt or $numberDouble
+  let coursePrice = 0;
+  if (course?.price) {
+    if (typeof course.price === 'object') {
+      if ('$numberInt' in course.price) {
+        coursePrice = parseInt(course.price.$numberInt, 10);
+      } else if ('$numberDouble' in course.price) {
+        coursePrice = parseFloat(course.price.$numberDouble);
+      }
+    } else {
+      coursePrice = course.price;
+    }
+  } else if (course?.isFree) {
+    coursePrice = 0;
+  }
 
   // NEW: handle paid enroll flow
   const handleEnrollClick = async () => {
@@ -193,7 +275,7 @@ const CourseHeader = ({ course, enrolled, enrolling, onEnroll, progressPercent, 
               {course.level}
             </span>
             <span>{course.subject}</span>
-            <span className="flex items-center"><FiStar className="mr-1 text-yellow-300" />{course.rating?.toFixed(1) || 'N/A'}</span>
+            <span className="flex items-center"><FiStar className="mr-1 text-yellow-300" />{typeof course.rating === 'number' ? course.rating.toFixed(1) : 'N/A'}</span>
             <span>{enrolledStudents.length || 0} students</span>
           </div>
           <div className="flex flex-col md:flex-row md:items-center gap-4">
@@ -224,15 +306,18 @@ const CourseHeader = ({ course, enrolled, enrolling, onEnroll, progressPercent, 
                       </svg>
                       Enrolling...
                     </span>
-                  ) : coursePrice > 0 ? (
-                    <span className="flex items-center">
-                      <FiShoppingCart className="mr-2" />
-                      Enroll for ${coursePrice}
-                    </span>
-                  ) : (
-                    'Enroll for Free'
-                  )}
-                </button>
+              ) : coursePrice > 0 ? (
+                <span className="flex items-center">
+                  <FiShoppingCart className="mr-2" />
+                  Enroll for ${coursePrice}
+                </span>
+              ) : (
+                <span className="flex items-center">
+                  <FiShoppingCart className="mr-2" />
+                  Enroll for Free
+                </span>
+              )}
+            </button>
               )
             ) : (
               <div className="flex items-center text-green-200 font-medium text-lg">
@@ -240,12 +325,12 @@ const CourseHeader = ({ course, enrolled, enrolling, onEnroll, progressPercent, 
                 <span>You are enrolled in this course</span>
               </div>
             )}
-            {coursePrice > 0 && !enrolled && (
-              <div className="flex items-center bg-white/80 px-4 py-2 rounded-lg shadow-sm border border-gray-200 text-gray-900 font-semibold">
-                <FiDollarSign className="text-green-500 mr-2" />
-                ${coursePrice}
-              </div>
-            )}
+                  {coursePrice > 0 && !enrolled && (
+                    <div className="flex items-center bg-white/80 px-4 py-2 rounded-lg shadow-sm border border-gray-200 text-gray-900 font-semibold">
+                      <FiDollarSign className="text-green-500 mr-2" />
+                      ${coursePrice}
+                    </div>
+                  )}
           </div>
           {/* Progress Bar */}
           {enrolled && (
@@ -689,7 +774,7 @@ const CourseDetails = ({ course }) => {
               </h4>
               <p className="text-sm text-gray-600">
                 This course contains {premiumSections.length} premium {premiumSections.length === 1 ? 'section' : 'sections'} 
-                {coursePrice > 0 ? ' included with your enrollment.' : ' available for free.'}
+                  {coursePrice > 0 ? ' included with your enrollment.' : ' available for free.'}
               </p>
             </div>
           )}
