@@ -36,6 +36,7 @@ import StudentNotificationCenter from "./Students/NotificationPages/StudentNotif
 import BookmarkedCoursesPage from "./Students/Interests/BookmarkedCourses";
 import TutorPayments from "./Instructor/TutorPayments";
 import StudentProfile from "./Students/StudentProfile";
+import GamificationDashboard from './Students/Gamification/GamificationDashboard';
 
 
 
@@ -91,6 +92,7 @@ function App() {
 
         {/* Role-based redirect after login */}
           <Route path="/notifications" element={<StudentNotificationCenter/>}/>
+          <Route path="/gamification" element={<GamificationDashboard/>}/>
 
         <Route path="/redirect-by-role" element={<RoleRedirect />} />
         <Route path="/student/dashboard" element={<StudentDashboard />}  />

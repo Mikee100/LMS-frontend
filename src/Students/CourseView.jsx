@@ -1071,18 +1071,72 @@ const handleUnlockSection = async (sectionId, price) => {
   completedLectures={progress.completedLectures}
  markLectureComplete={async (lectureId) => {
     const token = localStorage.getItem('token');
-    await axios.post('http://localhost:5000/api/progress/complete', {
-      courseId: course._id,
-      lectureId
-    }, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    // Refetch progress
-    const res = await axios.get(`http://localhost:5000/api/progress/${course._id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    setProgress(res.data || { completedLectures: [] });
-    toast.success('Lecture marked as complete!');
+    try {
+      const response = await axios.post('http://localhost:5000/api/progress/complete', {
+        courseId: course._id,
+        lectureId
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Show gamification feedback if available
+      if (response.data.gamification) {
+        const { pointsEarned, newAchievements, levelUp } = response.data.gamification;
+        
+        console.log('Gamification response:', response.data.gamification);
+        console.log('New achievements:', newAchievements);
+        
+        if (pointsEarned > 0) {
+          toast.success(`🎉 +${pointsEarned} points earned!`, {
+            position: 'top-center',
+            style: {
+              background: '#4BB543',
+              color: '#fff',
+              fontSize: '16px',
+              fontWeight: 'bold'
+            }
+          });
+        }
+        
+        if (newAchievements && newAchievements.length > 0) {
+          newAchievements.forEach(achievement => {
+            console.log('Achievement object:', achievement);
+            const achievementName = achievement.name || achievement.title || 'Unknown Achievement';
+            toast.success(`🏆 Achievement Unlocked: ${achievementName}!`, {
+              position: 'top-center',
+              style: {
+                background: '#FFD700',
+                color: '#000',
+                fontSize: '16px',
+                fontWeight: 'bold'
+              }
+            });
+          });
+        }
+        
+        if (levelUp) {
+          toast.success(`🚀 Level Up! You're now level ${levelUp.newLevel}!`, {
+            position: 'top-center',
+            style: {
+              background: '#FF6B35',
+              color: '#fff',
+              fontSize: '16px',
+              fontWeight: 'bold'
+            }
+          });
+        }
+      }
+      
+      // Refetch progress
+      const res = await axios.get(`http://localhost:5000/api/progress/${course._id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setProgress(res.data || { completedLectures: [] });
+      toast.success('Lecture marked as complete!');
+    } catch (error) {
+      console.error('Error marking lecture complete:', error);
+      toast.error('Failed to mark lecture as complete');
+    }
   }}
     activeLectureId={activeLectureId}
             setActiveLectureId={setActiveLectureId}
