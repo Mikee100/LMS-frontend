@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from 'react';
 import { 
     FaBrain, 
@@ -8,94 +10,112 @@ import {
     FaStar,
     FaArrowRight,
     FaClock,
-    FaGraduationCap,
-    FaTarget,
+    FaBullseye,
     FaRocket,
-    FaEye,
-    FaHeart,
     FaPlay,
-    FaCheckCircle,
-    FaExclamationTriangle,
-    FaInfoCircle
+    FaFire,
+    FaCode,
+    FaPalette,
+    FaBriefcase,
+    FaBullhorn,
+    FaMusic,
+    FaCamera,
+    FaDumbbell,
+    FaUtensils
 } from 'react-icons/fa';
-import { MdTrendingUp, MdPsychology, MdSchool } from 'react-icons/md';
+import { MdTrendingUp } from 'react-icons/md';
 import { BiBrain } from 'react-icons/bi';
 import { GiBrain } from 'react-icons/gi';
-import axios from 'axios';
 
-const AILearningAssistant = ({ studentId }) => {
+const AILearningAssistant = () => {
     const [activeTab, setActiveTab] = useState('recommendations');
     const [recommendations, setRecommendations] = useState([]);
     const [trendingCourses, setTrendingCourses] = useState([]);
-    const [insights, setInsights] = useState({});
     const [loading, setLoading] = useState(true);
-    const [preferences, setPreferences] = useState({
-        interests: [],
-        skillLevel: 'intermediate',
-        learningGoals: [],
-        preferredCategories: []
-    });
 
     useEffect(() => {
-        if (studentId) {
-            loadRecommendations();
-            loadTrendingCourses();
-            loadInsights();
-        }
-    }, [studentId]);
-
-    const loadRecommendations = async () => {
-        try {
-            const response = await axios.get(`/api/recommendations/courses/${studentId}?limit=12`);
-            setRecommendations(response.data.data);
-        } catch (error) {
-            console.error('Error loading recommendations:', error);
-        }
-    };
-
-    const loadTrendingCourses = async () => {
-        try {
-            const response = await axios.get('/api/recommendations/trending?limit=8');
-            setTrendingCourses(response.data.data);
-        } catch (error) {
-            console.error('Error loading trending courses:', error);
-        }
-    };
-
-    const loadInsights = async () => {
-        try {
-            const response = await axios.get(`/api/recommendations/insights/${studentId}`);
-            setInsights(response.data.data);
+       
+        setTimeout(() => {
+            setRecommendations([
+                {
+                    _id: '1',
+                    title: 'Advanced React Development',
+                    description: 'Master React hooks, context, and advanced patterns',
+                    category: 'Programming',
+                    difficulty: 'intermediate',
+                    duration: '6-8 hours',
+                    rating: 4.8,
+                    enrolledStudents: 1247
+                },
+                {
+                    _id: '2',
+                    title: 'UI/UX Design Fundamentals',
+                    description: 'Learn the principles of modern design',
+                    category: 'Design',
+                    difficulty: 'beginner',
+                    duration: '4-6 hours',
+                    rating: 4.6,
+                    enrolledStudents: 892
+                },
+                {
+                    _id: '3',
+                    title: 'Machine Learning Basics',
+                    description: 'Introduction to AI and ML concepts',
+                    category: 'Programming',
+                    difficulty: 'intermediate',
+                    duration: '8-10 hours',
+                    rating: 4.9,
+                    enrolledStudents: 2156
+                },
+                {
+                    _id: '4',
+                    title: 'Digital Marketing Mastery',
+                    description: 'Complete guide to modern marketing strategies',
+                    category: 'Marketing',
+                    difficulty: 'beginner',
+                    duration: '5-7 hours',
+                    rating: 4.7,
+                    enrolledStudents: 1834
+                }
+            ]);
+            
+            setTrendingCourses([
+                {
+                    _id: '5',
+                    title: 'AI and Machine Learning Basics',
+                    description: 'Introduction to AI concepts and applications',
+                    category: 'Programming',
+                    rating: 4.9,
+                    enrolledStudents: 2156
+                },
+                {
+                    _id: '6',
+                    title: 'Digital Marketing Mastery',
+                    description: 'Complete guide to modern marketing strategies',
+                    category: 'Marketing',
+                    rating: 4.7,
+                    enrolledStudents: 1834
+                },
+                {
+                    _id: '7',
+                    title: 'Web Development Bootcamp',
+                    description: 'Full-stack development from scratch',
+                    category: 'Programming',
+                    rating: 4.8,
+                    enrolledStudents: 3421
+                },
+                {
+                    _id: '8',
+                    title: 'Graphic Design Masterclass',
+                    description: 'Professional design techniques and tools',
+                    category: 'Design',
+                    rating: 4.6,
+                    enrolledStudents: 1567
+                }
+            ]);
             setLoading(false);
-        } catch (error) {
-            console.error('Error loading insights:', error);
-            setLoading(false);
-        }
-    };
-
-    const updatePreferences = async (newPreferences) => {
-        try {
-            await axios.post(`/api/recommendations/preferences/${studentId}`, newPreferences);
-            setPreferences(newPreferences);
-            loadRecommendations(); // Reload recommendations with new preferences
-        } catch (error) {
-            console.error('Error updating preferences:', error);
-        }
-    };
-
-    const getRecommendationReason = (course) => {
-        if (course.reason) return course.reason;
-        
-        const reasons = [
-            "Based on your learning history and interests",
-            "Similar to courses you've enjoyed",
-            "Popular among students with similar preferences",
-            "Matches your current skill level",
-            "Complements your learning goals",
-            "Trending in your preferred categories"
-        ];
-        return reasons[Math.floor(Math.random() * reasons.length)];
-    };
+        }, 1000);
+    }, []);
 
     const getSkillLevelColor = (level) => {
         const colors = {
@@ -157,8 +177,7 @@ const AILearningAssistant = ({ studentId }) => {
                         {[
                             { id: 'recommendations', label: 'Smart Recommendations', icon: <FaBrain /> },
                             { id: 'trending', label: 'Trending Courses', icon: <MdTrendingUp /> },
-                            { id: 'insights', label: 'Learning Insights', icon: <FaChartLine /> },
-                            { id: 'preferences', label: 'Preferences', icon: <FaTarget /> }
+                            { id: 'insights', label: 'Learning Insights', icon: <FaChartLine /> }
                         ].map(tab => (
                             <button
                                 key={tab.id}
@@ -181,52 +200,50 @@ const AILearningAssistant = ({ studentId }) => {
                     {/* Main Content */}
                     <div className="lg:col-span-2">
                         {activeTab === 'recommendations' && (
-                            <div className="space-y-6">
-                                <div className="bg-white rounded-xl shadow-sm p-6">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <FaLightbulb className="text-yellow-500 text-xl" />
-                                        <h2 className="text-xl font-semibold text-gray-800">Personalized Recommendations</h2>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {recommendations.map((course, index) => (
-                                            <div key={course._id || index} className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100 hover:shadow-md transition-all">
-                                                <div className="flex items-start justify-between mb-3">
-                                                    <div className="flex items-center gap-2">
-                                                        {getCategoryIcon(course.category)}
-                                                        <span className="text-sm font-medium text-gray-700">{course.category}</span>
-                                                    </div>
-                                                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${getSkillLevelColor(course.difficulty)}`}>
-                                                        {course.difficulty}
-                                                    </div>
+                            <div className="bg-white rounded-xl shadow-sm p-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <FaLightbulb className="text-yellow-500 text-xl" />
+                                    <h2 className="text-xl font-semibold text-gray-800">Personalized Recommendations</h2>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {recommendations.map((course, index) => (
+                                        <div key={course._id || index} className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100 hover:shadow-md transition-all">
+                                            <div className="flex items-start justify-between mb-3">
+                                                <div className="flex items-center gap-2">
+                                                    {getCategoryIcon(course.category)}
+                                                    <span className="text-sm font-medium text-gray-700">{course.category}</span>
                                                 </div>
-                                                <h3 className="font-semibold text-gray-800 mb-2">{course.title}</h3>
-                                                <p className="text-sm text-gray-600 mb-3 line-clamp-2">{course.description}</p>
-                                                <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-                                                    <span className="flex items-center gap-1">
-                                                        <FaClock />
-                                                        {course.duration || '4-6 hours'}
-                                                    </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <FaUsers />
-                                                        {course.enrolledStudents || Math.floor(Math.random() * 1000) + 100}
-                                                    </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <FaStar className="text-yellow-400" />
-                                                        {course.rating || (4 + Math.random()).toFixed(1)}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                                                        {getRecommendationReason(course)}
-                                                    </span>
-                                                    <button className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-1 rounded-md text-sm hover:shadow-md transition-all">
-                                                        <FaPlay className="inline mr-1" />
-                                                        Start Learning
-                                                    </button>
+                                                <div className={`px-2 py-1 rounded-full text-xs font-medium ${getSkillLevelColor(course.difficulty)}`}>
+                                                    {course.difficulty}
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
+                                            <h3 className="font-semibold text-gray-800 mb-2">{course.title}</h3>
+                                            <p className="text-sm text-gray-600 mb-3">{course.description}</p>
+                                            <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
+                                                <span className="flex items-center gap-1">
+                                                    <FaClock />
+                                                    {course.duration}
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <FaUsers />
+                                                    {course.enrolledStudents}
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <FaStar className="text-yellow-400" />
+                                                    {course.rating}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                                    Based on your interests
+                                                </span>
+                                                <button className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-1 rounded-md text-sm hover:shadow-md transition-all">
+                                                    <FaPlay className="inline mr-1" />
+                                                    Start Learning
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         )}
@@ -252,10 +269,10 @@ const AILearningAssistant = ({ studentId }) => {
                                             <h3 className="font-semibold text-gray-800 mb-2">{course.title}</h3>
                                             <p className="text-sm text-gray-600 mb-3">{course.description}</p>
                                             <div className="flex items-center justify-between text-sm text-gray-500">
-                                                <span>{course.enrolledStudents || Math.floor(Math.random() * 5000) + 1000} students</span>
+                                                <span>{course.enrolledStudents} students</span>
                                                 <span className="flex items-center gap-1">
                                                     <FaStar className="text-yellow-400" />
-                                                    {course.rating || (4.2 + Math.random() * 0.6).toFixed(1)}
+                                                    {course.rating}
                                                 </span>
                                             </div>
                                         </div>
@@ -265,91 +282,44 @@ const AILearningAssistant = ({ studentId }) => {
                         )}
 
                         {activeTab === 'insights' && (
-                            <div className="space-y-6">
-                                <div className="bg-white rounded-xl shadow-sm p-6">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <FaChartLine className="text-purple-500 text-xl" />
-                                        <h2 className="text-xl font-semibold text-gray-800">Learning Insights</h2>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4">
-                                            <h3 className="font-semibold text-gray-800 mb-2">Learning Patterns</h3>
-                                            <div className="space-y-2">
-                                                <div className="flex justify-between text-sm">
-                                                    <span>Peak learning time:</span>
-                                                    <span className="font-medium">Evening (7-9 PM)</span>
-                                                </div>
-                                                <div className="flex justify-between text-sm">
-                                                    <span>Preferred duration:</span>
-                                                    <span className="font-medium">30-45 minutes</span>
-                                                </div>
-                                                <div className="flex justify-between text-sm">
-                                                    <span>Completion rate:</span>
-                                                    <span className="font-medium text-green-600">78%</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4">
-                                            <h3 className="font-semibold text-gray-800 mb-2">Skill Progress</h3>
-                                            <div className="space-y-2">
-                                                <div className="flex justify-between text-sm">
-                                                    <span>Programming:</span>
-                                                    <span className="font-medium text-blue-600">Intermediate</span>
-                                                </div>
-                                                <div className="flex justify-between text-sm">
-                                                    <span>Design:</span>
-                                                    <span className="font-medium text-green-600">Advanced</span>
-                                                </div>
-                                                <div className="flex justify-between text-sm">
-                                                    <span>Business:</span>
-                                                    <span className="font-medium text-yellow-600">Beginner</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'preferences' && (
                             <div className="bg-white rounded-xl shadow-sm p-6">
                                 <div className="flex items-center gap-3 mb-4">
-                                    <FaTarget className="text-red-500 text-xl" />
-                                    <h2 className="text-xl font-semibold text-gray-800">Learning Preferences</h2>
+                                    <FaChartLine className="text-purple-500 text-xl" />
+                                    <h2 className="text-xl font-semibold text-gray-800">Learning Insights</h2>
                                 </div>
-                                <div className="space-y-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Skill Level</label>
-                                        <select 
-                                            value={preferences.skillLevel}
-                                            onChange={(e) => updatePreferences({...preferences, skillLevel: e.target.value})}
-                                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        >
-                                            <option value="beginner">Beginner</option>
-                                            <option value="intermediate">Intermediate</option>
-                                            <option value="advanced">Advanced</option>
-                                        </select>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4">
+                                        <h3 className="font-semibold text-gray-800 mb-2">Learning Patterns</h3>
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between text-sm">
+                                                <span>Peak learning time:</span>
+                                                <span className="font-medium">Evening (7-9 PM)</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span>Preferred duration:</span>
+                                                <span className="font-medium">30-45 minutes</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span>Completion rate:</span>
+                                                <span className="font-medium text-green-600">78%</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Learning Goals</label>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            {['Career Change', 'Skill Enhancement', 'Personal Interest', 'Certification', 'Project Building', 'Freelancing'].map(goal => (
-                                                <label key={goal} className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                                                    <input 
-                                                        type="checkbox"
-                                                        checked={preferences.learningGoals.includes(goal)}
-                                                        onChange={(e) => {
-                                                            const newGoals = e.target.checked 
-                                                                ? [...preferences.learningGoals, goal]
-                                                                : preferences.learningGoals.filter(g => g !== goal);
-                                                            updatePreferences({...preferences, learningGoals: newGoals});
-                                                        }}
-                                                        className="mr-2"
-                                                    />
-                                                    <span className="text-sm">{goal}</span>
-                                                </label>
-                                            ))}
+                                    <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4">
+                                        <h3 className="font-semibold text-gray-800 mb-2">Skill Progress</h3>
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between text-sm">
+                                                <span>Programming:</span>
+                                                <span className="font-medium text-blue-600">Intermediate</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span>Design:</span>
+                                                <span className="font-medium text-green-600">Advanced</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span>Business:</span>
+                                                <span className="font-medium text-yellow-600">Beginner</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -390,7 +360,7 @@ const AILearningAssistant = ({ studentId }) => {
                                     <span className="text-sm">Generate Learning Path</span>
                                 </button>
                                 <button className="w-full flex items-center gap-2 p-3 text-left bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg hover:shadow-md transition-all">
-                                    <FaTarget className="text-green-500" />
+                                   <FaBullseye className="text-green-500" />
                                     <span className="text-sm">Set Learning Goals</span>
                                 </button>
                                 <button className="w-full flex items-center gap-2 p-3 text-left bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg hover:shadow-md transition-all">
@@ -421,3 +391,4 @@ const AILearningAssistant = ({ studentId }) => {
 };
 
 export default AILearningAssistant; 
+

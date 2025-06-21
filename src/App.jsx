@@ -37,6 +37,8 @@ import BookmarkedCoursesPage from "./Students/Interests/BookmarkedCourses";
 import TutorPayments from "./Instructor/TutorPayments";
 import StudentProfile from "./Students/StudentProfile";
 import GamificationDashboard from './Students/Gamification/GamificationDashboard';
+import AILearningAssistant from "./Students/AI_Assistant/AILearningAssistant";
+import SocialLearningHub from "./Students/SocialLearning/SocialLearningHub";
 
 
 
@@ -93,6 +95,8 @@ function App() {
         {/* Role-based redirect after login */}
           <Route path="/notifications" element={<StudentNotificationCenter/>}/>
           <Route path="/gamification" element={<GamificationDashboard/>}/>
+          <Route path="/ai-assistant" element={<AILearningAssistant />}/>
+          <Route path="/social-learning" element={<SocialLearningHub />}/>
 
         <Route path="/redirect-by-role" element={<RoleRedirect />} />
         <Route path="/student/dashboard" element={<StudentDashboard />}  />

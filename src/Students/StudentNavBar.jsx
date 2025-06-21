@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Menu, X, User, Home, BookOpen, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiBell, FiBookmark, FiAward } from 'react-icons/fi';
+import { FaBrain, FaUsers } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom'; // <-- Add this import
 
 const StudentNavBar = ({student}) => {
@@ -187,6 +188,26 @@ useEffect(() => {
                 >
                   <FiAward size={20} className="flex-shrink-0" /> 
                   <span>Achievements</span>
+                </li>
+                <li
+                  className="flex items-center gap-3 p-2 text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-md cursor-pointer transition-colors"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    navigate('/ai-assistant');
+                  }}
+                >
+                  <FaBrain size={20} className="flex-shrink-0" />
+                  <span>AI Assistant</span>
+                </li>
+                <li
+                  className="flex items-center gap-3 p-2 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-md cursor-pointer transition-colors"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    navigate('/social-learning');
+                  }}
+                >
+                  <FaUsers size={20} className="flex-shrink-0" />
+                  <span>Social Learning</span>
                 </li>
                 <li 
   className="flex items-center gap-3 p-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md cursor-pointer transition-colors"
