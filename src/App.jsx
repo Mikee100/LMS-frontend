@@ -40,7 +40,9 @@ import GamificationDashboard from './Students/Gamification/GamificationDashboard
 import AILearningAssistant from "./Students/AI_Assistant/AILearningAssistant";
 import SocialLearningHub from "./Students/SocialLearning/SocialLearningHub";
 
-
+// Enterprise Pages
+import EnterpriseDashboard from "./Enterprise/EnterpriseDashboard";
+import LearningPathManager from "./Enterprise/LearningPathManager";
 
 function App() {
 
@@ -91,6 +93,10 @@ function App() {
           <Route path="payments" element={<TutorPayments />} />
          
         </Route>
+
+        {/* Enterprise Routes */}
+        <Route path="/enterprise" element={<EnterpriseDashboard />} />
+        <Route path="/enterprise/learning-paths" element={<LearningPathManager />} />
 
         {/* Role-based redirect after login */}
           <Route path="/notifications" element={<StudentNotificationCenter/>}/>
